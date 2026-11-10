@@ -24,47 +24,9 @@ final class Database
             ]);
         } catch (PDOException $e) {
             error_log('[BD] ' . $e->getMessage());
-            http_response_code(500);
-            exit('No fue posible conectar con la base de datos. Intenta más tarde.');
+            throw new \RuntimeException('No fue posible conectar con la base de datos.', 0, $e);
         }
         return self::$pdo;
-    }
-
-    public static function all(string $sql, array $params = []): array
-    {
-        $st = self::pdo()->prepare($sql);
-        $st->execute($params);
-        return $st->fetchAll();
-    }
-
-    public static function one(string $sql, array $params = []): ?array
-    {
-        $st = self::pdo()->prepare($sql);
-        $st->execute($params);
-        $fila = $st->fetch();
-        return $fila === false ? null : $fila;
-    }
-
-    public static function value(string $sql, array $params = []): mixed
-    {
-        $st = self::pdo()->prepare($sql);
-        $st->execute($params);
-        $v = $st->fetchColumn();
-        return $v === false ? null : $v;
-    }
-
-    public static function run(string $sql, array $params = []): int
-    {
-        $st = self::pdo()->prepare($sql);
-        $st->execute($params);
-        return $st->rowCount();
-    }
-
-    public static function insert(string $sql, array $params = []): int
-    {
-        $st = self::pdo()->prepare($sql);
-        $st->execute($params);
-        return (int)self::pdo()->lastInsertId();
     }
 
     public static function begin(): void
@@ -79,8 +41,8 @@ final class Database
 
     public static function rollback(): void
     {
-        if (self::pdo()->inTransaction()) {
-            self::pdo()->rollBack();
+        if (self::$pdo !== null && self::$pdo->inTransaction()) {
+            self::$pdo->rollBack();
         }
     }
 }

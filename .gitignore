@@ -1,6 +1,6 @@
 .env
-.storage/logs/*
-!.storage/logs/.gitkeep
+storage/logs/*
+!storage/logs/.gitkeep
 public/uploads/comprobantes/*
 !public/uploads/comprobantes/.gitkeep
 public/uploads/productos/*

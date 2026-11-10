@@ -3,9 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Core\Auth;
-
-final class Errores extends Controller
+final class ErroresController extends Controller
 {
     public function noEncontrado(): void
     {

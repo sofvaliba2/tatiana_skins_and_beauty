@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
-use App\Core\Database;
 use App\Core\Flash;
 use App\Core\Validate;
+use App\Models\Usuario;
 
 final class AuthController extends Controller
 {
@@ -66,25 +66,15 @@ final class AuthController extends Controller
                 $errores = $v->errores();
             } else {
                 try {
-                    Database::begin();
-                    $idUsuario = \App\Core\Ids::insertarConCodigo('usuario', 'id_usuario', 'CLI', 4, [
-                        'nombre'          => trim((string)$_POST['nombre']),
-                        'ap_paterno'      => trim((string)$_POST['ap_paterno']),
-                        'ap_materno'      => trim((string)($_POST['ap_materno'] ?? '')),
-                        'telefono'        => trim((string)$_POST['telefono']),
+                    $correo = mb_strtolower(trim((string)$_POST['correo']));
+                    Usuario::crearCliente([
+                        'nombre'           => trim((string)$_POST['nombre']),
+                        'ap_paterno'       => trim((string)$_POST['ap_paterno']),
+                        'ap_materno'       => trim((string)($_POST['ap_materno'] ?? '')),
+                        'telefono'         => trim((string)$_POST['telefono']),
                         'fecha_nacimiento' => ($_POST['fecha_nacimiento'] ?? '') !== '' ? $_POST['fecha_nacimiento'] : null,
-                        'id_rol'          => 'ROL03',
-                        'id_sucursal'     => null,
-                    ]);
-                    \App\Core\Ids::insertarConEntero('cuenta_usuario', 'id_cuentaUsuario', [
-                        'correo'     => mb_strtolower(trim((string)$_POST['correo'])),
-                        'password'   => Auth::hashPassword($pass, mb_strtolower(trim((string)$_POST['correo']))),
-                        'id_rol'     => 'ROL03',
-                        'id_usuario' => $idUsuario,
-                    ]);
-                    Database::commit();
+                    ], $correo, $pass);
                 } catch (\Throwable $e) {
-                    Database::rollback();
                     error_log('[REGISTRO] ' . $e->getMessage());
                     $errores['_general'][] = 'No se pudo crear la cuenta. Intenta nuevamente.';
                 }
@@ -108,18 +98,8 @@ final class AuthController extends Controller
             if ($v->fallido()) {
                 $errores = $v->errores();
             } else {
-                $cuenta = Database::one(
-                    'SELECT c.correo, u.nombre FROM cuenta_usuario c
-                     LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
-                     WHERE c.correo = ?',
-                    [mb_strtolower(trim((string)$_POST['correo']))]
-                );
                 $enviado = true;
-                if ($cuenta !== null) {
-                    Flash::ok('Si el correo existe, el personal del centro te ayudará a restablecer tu contraseña.');
-                } else {
-                    Flash::ok('Si el correo existe, el personal del centro te ayudará a restablecer tu contraseña.');
-                }
+                Flash::ok('Si el correo existe, el personal del centro te ayudará a restablecer tu contraseña.');
             }
         }
         $this->vista('auth/recuperar.php', ['errores' => $errores, 'enviado' => $enviado]);

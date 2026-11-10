@@ -1,18 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Core;
+namespace App\Models;
 
-/**
- * Generador de identificadores: la base de datos no usa AUTO_INCREMENT,
- * por lo que los IDs se calculan con MAX()+1 bajo un candado GET_LOCK
- * para evitar duplicados ante peticiones simultáneas.
- */
-final class Ids
+final class Ids extends Model
 {
     private static function lock(string $clave): void
     {
-        $ok = Database::value('SELECT GET_LOCK(?, 10)', ['tatiana.' . $clave]);
+        $ok = self::value('SELECT GET_LOCK(?, 10)', ['tatiana.' . $clave]);
         if ((string)$ok !== '1') {
             throw new \RuntimeException('No se pudo asignar un identificador. Reintenta.');
         }
@@ -20,7 +15,7 @@ final class Ids
 
     private static function unlock(string $clave): void
     {
-        Database::value('SELECT RELEASE_LOCK(?)', ['tatiana.' . $clave]);
+        self::value('SELECT RELEASE_LOCK(?)', ['tatiana.' . $clave]);
     }
 
     public static function entero(string $tabla, string $columna): int
@@ -28,7 +23,7 @@ final class Ids
         $clave = $tabla . '.' . $columna;
         self::lock($clave);
         try {
-            $max = Database::value("SELECT COALESCE(MAX(`{$columna}`), 0) FROM `{$tabla}`");
+            $max = self::value("SELECT COALESCE(MAX(`{$columna}`), 0) FROM `{$tabla}`");
             return (int)$max + 1;
         } finally {
             self::unlock($clave);
@@ -48,7 +43,7 @@ final class Ids
 
     private static function siguienteCodigo(string $tabla, string $columna, string $prefijo, int $ancho): string
     {
-        $max = Database::value(
+        $max = self::value(
             "SELECT COALESCE(MAX(CAST(SUBSTRING(`{$columna}`, ?) AS UNSIGNED)), 0)
              FROM `{$tabla}`
              WHERE `{$columna}` LIKE ?",
@@ -71,7 +66,7 @@ final class Ids
             $cols = array_keys($datos);
             $sql = "INSERT INTO `{$tabla}` (`" . implode('`,`', $cols) . '`) VALUES (' .
                    implode(',', array_fill(0, count($cols), '?')) . ')';
-            Database::run($sql, array_values($datos));
+            self::run($sql, array_values($datos));
             return $id;
         } finally {
             self::unlock($clave);
@@ -88,7 +83,7 @@ final class Ids
             $cols = array_keys($datos);
             $sql = "INSERT INTO `{$tabla}` (`" . implode('`,`', $cols) . '`) VALUES (' .
                    implode(',', array_fill(0, count($cols), '?')) . ')';
-            Database::run($sql, array_values($datos));
+            self::run($sql, array_values($datos));
             return $id;
         } finally {
             self::unlock($clave);
@@ -97,7 +92,7 @@ final class Ids
 
     private static function siguienteEntero(string $tabla, string $columna): int
     {
-        $max = Database::value("SELECT COALESCE(MAX(`{$columna}`), 0) FROM `{$tabla}`");
+        $max = self::value("SELECT COALESCE(MAX(`{$columna}`), 0) FROM `{$tabla}`");
         return (int)$max + 1;
     }
 }

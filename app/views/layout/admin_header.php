@@ -15,12 +15,7 @@ function item_menu(string $vista, string $icono, string $texto, string $activo):
     return '<a class="item ' . $c . '" href="' . ruta($vista) . '">' . icon($icono, 20) . '<span>' . e($texto) . '</span></a>';
 }
 
-$avisosPendientes = 0;
-try {
-    $avisosPendientes = (int)\App\Core\Database::value("SELECT COUNT(*) FROM reserva WHERE estado = 'pendiente'");
-} catch (\Throwable $e) {
-    $avisosPendientes = 0;
-}
+$avisosPendientes = (int)($avisos_admin ?? 0); // lo calcula el controlador base
 $iniciales = mb_strtoupper(mb_substr($u['nombre'] ?? '?', 0, 1) . mb_substr($u['apellidos'] ?? '', 0, 1));
 $rolTexto = ($u['id_rol'] ?? '') === 'ROL01' ? 'Administrador' : 'Personal';
 ?>

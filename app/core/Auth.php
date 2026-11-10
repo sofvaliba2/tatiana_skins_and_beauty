@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Core;
 
-use PDOException;
+use App\Models\Usuario;
 
 final class Auth
 {
@@ -11,17 +11,7 @@ final class Auth
 
     public static function intentar(string $correo, string $password): bool
     {
-        $cuenta = Database::one(
-            'SELECT c.id_cuentaUsuario, c.correo, c.password, c.id_rol, c.id_usuario,
-                    r.nombre_rol,
-                    u.nombre, u.ap_paterno, u.ap_materno, u.telefono, u.id_sucursal
-             FROM cuenta_usuario c
-             JOIN rol r ON r.id_rol = c.id_rol
-             LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
-             WHERE c.correo = ?
-             LIMIT 1',
-            [mb_strtolower(trim($correo))]
-        );
+        $cuenta = Usuario::cuentaPorCorreo($correo);
 
         if ($cuenta === null || !self::verificarPassword($password, (string)$cuenta['password'], (string)$cuenta['correo'])) {
             return false;
@@ -63,7 +53,7 @@ final class Auth
 
     public static function esAdmin(): bool
     {
-        return self::usuario()['id_rol'] ?? '' === 'ROL01';
+        return (self::usuario()['id_rol'] ?? '') === 'ROL01';
     }
 
     public static function esPersonal(): bool

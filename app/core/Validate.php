@@ -122,13 +122,7 @@ final class Validate
         if ($v === '') {
             return $this;
         }
-        $sql = "SELECT COUNT(*) FROM `{$tabla}` WHERE `{$columna}` = ?";
-        $params = [$v];
-        if ($excluirValor !== null && $excluirColumna !== null) {
-            $sql .= " AND `{$excluirColumna}` <> ?";
-            $params[] = $excluirValor;
-        }
-        if ((int)Database::value($sql, $params) > 0) {
+        if (\App\Models\Model::existeValor($tabla, $columna, $v, $excluirColumna, $excluirValor)) {
             $this->fallo($campo, "Ya existe un registro con ese valor de {$etiqueta}.");
         }
         return $this;

@@ -1,8 +1,6 @@
-/* Tatiana Skin and Beauty — interacciones del sitio */
 (function () {
     'use strict';
 
-    /* Confirmación de acciones delicadas (data-confirm) */
     document.addEventListener('submit', function (ev) {
         var form = ev.target;
         if (!form || !form.getAttribute) return;
@@ -12,7 +10,6 @@
         }
     });
 
-    /* Ocultar mensajes flash a los 6 segundos */
     document.addEventListener('DOMContentLoaded', function () {
         var alertas = document.querySelectorAll('.alert');
         window.setTimeout(function () {
@@ -24,7 +21,6 @@
         }, 6000);
     });
 
-    /* Botones + / − para cantidades */
     document.addEventListener('click', function (ev) {
         var btn = ev.target.closest ? ev.target.closest('[data-step]') : null;
         if (!btn) return;

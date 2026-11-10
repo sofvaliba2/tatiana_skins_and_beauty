@@ -1,5 +1,4 @@
 <?php
-/** Agenda de citas + ficha de piel de la cita seleccionada. */
 $titulo = 'Citas';
 $activo = 'admin_citas';
 require __DIR__ . '/../layout/admin_header.php';

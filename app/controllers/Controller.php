@@ -3,14 +3,34 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Flash;
+use App\Models\Reserva;
 
 abstract class Controller
 {
     protected function vista(string $archivo, array $datos = []): void
     {
+        $datos += $this->avisos();
         extract($datos, EXTR_SKIP);
         require BASE_PATH . '/app/views/' . $archivo;
+    }
+
+    private function avisos(): array
+    {
+        $avisos = ['avisos_cliente' => 0, 'avisos_admin' => 0];
+        $u = Auth::usuario();
+        if ($u === null) {
+            return $avisos;
+        }
+        try {
+            $avisos['avisos_cliente'] = Reserva::contarPendientesDeUsuario((string)$u['id']);
+            if (Auth::esPersonal()) {
+                $avisos['avisos_admin'] = Reserva::contarPendientes();
+            }
+        } catch (\Throwable $e) {
+        }
+        return $avisos;
     }
 
     protected function redirigir(string $vista, array $params = []): never

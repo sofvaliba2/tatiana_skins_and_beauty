@@ -8,17 +8,7 @@ $titulo = $titulo ?? 'Tatiana Skin and Beauty';
 $activo = $activo ?? '';
 $u = \App\Core\Auth::usuario();
 $carritoCount = count($_SESSION['carrito'] ?? []);
-$pendientes = 0;
-if ($u !== null) {
-    try {
-        $pendientes = (int)\App\Core\Database::value(
-            "SELECT COUNT(*) FROM reserva WHERE id_usuario = ? AND estado = 'pendiente'",
-            [$u['id']]
-        );
-    } catch (\Throwable $e) {
-        $pendientes = 0;
-    }
-}
+$pendientes = (int)($avisos_cliente ?? 0); // lo calcula el controlador base
 ?>
 <!DOCTYPE html>
 <html lang="es">
