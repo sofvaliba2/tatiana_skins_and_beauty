@@ -19,10 +19,43 @@ final class Historial extends Model
     public static function deUsuario(string $idUsuario): array
     {
         return self::all(
-            'SELECT h.*, r.fecha FROM historial_cliente h
+            'SELECT h.*, r.fecha, r.hora, r.estado AS estado_reserva, r.id_sucursal,
+                    s.nombre_sucursal,
+                    (SELECT GROUP_CONCAT(sv.nombre SEPARATOR ", ")
+                     FROM detalle_reserva dr JOIN servicio sv ON sv.id_servicio = dr.id_servicio
+                     WHERE dr.id_reserva = r.id_reserva) AS servicios
+             FROM historial_cliente h
              JOIN reserva r ON r.id_reserva = h.id_reserva
-             WHERE r.id_usuario = ? ORDER BY h.fecha_registro DESC',
+             LEFT JOIN sucursal s ON s.id_sucursal = r.id_sucursal
+             WHERE r.id_usuario = ?
+             ORDER BY h.fecha_registro DESC, h.id_historial DESC',
             [$idUsuario]
+        );
+    }
+
+    /** Historial de una clienta visto desde la sucursal de un empleado. */
+    public static function deUsuarioDeSucursal(string $idUsuario, string $idSucursal): array
+    {
+        return self::all(
+            'SELECT h.*, r.fecha, r.hora, r.estado AS estado_reserva, r.id_sucursal, r.id_usuario,
+                    s.nombre_sucursal,
+                    (SELECT GROUP_CONCAT(sv.nombre SEPARATOR ", ")
+                     FROM detalle_reserva dr JOIN servicio sv ON sv.id_servicio = dr.id_servicio
+                     WHERE dr.id_reserva = r.id_reserva) AS servicios
+             FROM historial_cliente h
+             JOIN reserva r ON r.id_reserva = h.id_reserva
+             LEFT JOIN sucursal s ON s.id_sucursal = r.id_sucursal
+             WHERE r.id_usuario = ? AND r.id_sucursal = ?
+             ORDER BY h.fecha_registro DESC, h.id_historial DESC',
+            [$idUsuario, $idSucursal]
+        );
+    }
+
+    public static function porReserva(int $idReserva): ?array
+    {
+        return self::one(
+            'SELECT * FROM historial_cliente WHERE id_reserva = ? ORDER BY id_historial DESC LIMIT 1',
+            [$idReserva]
         );
     }
 
@@ -89,5 +122,22 @@ final class Historial extends Model
         } else {
             self::registrarNota($idReserva, $observaciones);
         }
+    }
+
+    /**
+     * Añade una nueva entrada de seguimiento sin sobrescribir la ficha
+     * anterior de la clienta. Queda vinculada a la reserva de la sesión.
+     */
+    public static function registrarSeguimiento(int $idReserva, array $datos): int
+    {
+        return Ids::insertarConEntero('historial_cliente', 'id_historial', [
+            'alergias'                => $datos['alergias'] ?? null,
+            'objetivo_piel'           => $datos['objetivo_piel'] ?? null,
+            'abierto_recomendaciones' => !empty($datos['abierto_recomendaciones']) ? 1 : 0,
+            'rutina_actual'           => $datos['rutina_actual'] ?? null,
+            'observaciones_sesion'    => $datos['observaciones_sesion'] ?? null,
+            'fecha_registro'          => date('Y-m-d H:i:s'),
+            'id_reserva'              => $idReserva,
+        ]);
     }
 }

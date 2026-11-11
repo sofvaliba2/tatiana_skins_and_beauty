@@ -9,6 +9,9 @@ $activo = $activo ?? '';
 $u = \App\Core\Auth::usuario();
 $carritoCount = count($_SESSION['carrito'] ?? []);
 $pendientes = (int)($avisos_cliente ?? 0); // lo calcula el controlador base
+$esCliente = ($u['id_rol'] ?? '') === 'ROL03';
+$esStaff = in_array($u['id_rol'] ?? '', ['ROL01', 'ROL02'], true);
+$panelStaff = ($u['id_rol'] ?? '') === 'ROL02' ? 'empleado_dashboard' : 'admin_dashboard';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -30,18 +33,22 @@ $pendientes = (int)($avisos_cliente ?? 0); // lo calcula el controlador base
             <a href="<?= ruta('servicios') ?>" class="<?= $activo === 'servicios' ? 'active' : '' ?>">Servicios</a>
             <a href="<?= ruta('catalogo') ?>"  class="<?= $activo === 'catalogo' ? 'active' : '' ?>">Productos</a>
             <a href="<?= ruta('ayuda') ?>" class="<?= $activo === 'ayuda' ? 'active' : '' ?>">Ayuda</a>
-            <?php if ($u !== null): ?>
+            <?php if ($esCliente): ?>
                 <a href="<?= ruta('mis_reservas') ?>" class="<?= $activo === 'mis_reservas' ? 'active' : '' ?>">Mis reservas</a>
                 <a href="<?= ruta('panel') ?>" class="<?= $activo === 'panel' ? 'active' : '' ?>">Mi cuenta</a>
+            <?php elseif ($esStaff): ?>
+                <a href="<?= ruta($panelStaff) ?>">Panel de trabajo</a>
             <?php endif; ?>
         </nav>
         <div class="nav-actions">
+            <?php if (!$esStaff): ?>
             <a href="<?= ruta('carrito') ?>" class="cart-link" aria-label="Carrito">
                 <?= icon('cart', 20) ?>
                 <?php if ($carritoCount > 0): ?><span class="badge"><?= $carritoCount ?></span><?php endif; ?>
             </a>
+            <?php endif; ?>
             <?php if ($u !== null): ?>
-                <?php if ($pendientes > 0): ?>
+                <?php if ($esCliente && $pendientes > 0): ?>
                     <a href="<?= ruta('mis_reservas') ?>" class="btn btn-outline btn-sm"><?= icon('clock', 15) ?> <?= $pendientes ?> pendiente<?= $pendientes > 1 ? 's' : '' ?></a>
                 <?php endif; ?>
                 <form method="post" action="<?= ruta('logout') ?>" style="display:inline">
@@ -51,8 +58,8 @@ $pendientes = (int)($avisos_cliente ?? 0); // lo calcula el controlador base
             <?php else: ?>
                 <a href="<?= ruta('login') ?>" class="btn btn-outline btn-sm">Ingresar</a>
             <?php endif; ?>
-            <a href="<?= $u !== null ? ruta($u['id_rol'] === 'ROL03' ? 'reserva_nueva' : 'admin_dashboard') : ruta('reserva_nueva') ?>" class="btn btn-primary btn-sm">
-                <?= $u !== null && $u['id_rol'] !== 'ROL03' ? 'Panel' : 'Reservar cita' ?>
+            <a href="<?= $esStaff ? ruta($panelStaff) : ruta('reserva_nueva') ?>" class="btn btn-primary btn-sm">
+                <?= $esStaff ? 'Panel' : 'Reservar cita' ?>
             </a>
             <button class="burger" aria-label="Menú" onclick="document.getElementById('menu').classList.toggle('open')"><?= icon('menu', 26) ?></button>
         </div>

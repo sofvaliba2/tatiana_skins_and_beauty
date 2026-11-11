@@ -94,10 +94,31 @@ final class ClienteController extends Controller
     public function detalleCompra(): void
     {
         $compra = Compra::porId($this->entero('id'));
-        if ($compra === null || ($compra['id_usuario'] !== Auth::id() && !Auth::esPersonal())) {
+        if ($compra === null) {
             (new ErroresController())->denegado();
             return;
         }
+
+        $esPropia = (string)($compra['id_usuario'] ?? '') === Auth::id();
+        if (!$esPropia && !Auth::esPersonal()) {
+            (new ErroresController())->denegado();
+            return;
+        }
+
+        // Un empleado solo puede ver comprobantes de clientas de su sucursal.
+        if (Auth::esEmpleado()) {
+            $idSucursal = (string)(Auth::usuario()['sucursal'] ?? '');
+            $idCliente = (string)($compra['id_usuario'] ?? '');
+            if (
+                $idSucursal === '' ||
+                $idCliente === '' ||
+                Usuario::clienteDeSucursal($idCliente, $idSucursal) === null
+            ) {
+                (new ErroresController())->denegado();
+                return;
+            }
+        }
+
         $items = Compra::items((int)$compra['id_compra']);
         $this->vista('cliente/detalle_compra.php', compact('compra', 'items'));
     }

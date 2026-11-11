@@ -95,6 +95,7 @@ final class AdminSistemaController extends Controller
     {
         $idEditar = $this->texto('id_usuario');
         $idRol = $this->texto('id_rol');
+        $idSucursal = $this->texto('id_sucursal');
         $v = Validate::make()
             ->texto('nombre', 'El nombre', 2, 50)
             ->texto('ap_paterno', 'El apellido paterno', 2, 50)
@@ -102,11 +103,20 @@ final class AdminSistemaController extends Controller
         if (!in_array($idRol, ['ROL01', 'ROL02'], true)) {
             $v->fallo('id_rol', 'Selecciona un rol válido (administrador o personal).');
         }
+        if ($idSucursal !== '' && Sucursal::porId($idSucursal) === null) {
+            $v->fallo('id_sucursal', 'La sucursal seleccionada no existe.');
+        }
+        if ($idRol === 'ROL02' && $idSucursal === '') {
+            $v->fallo('id_sucursal', 'Asigna una sucursal al empleado. Es obligatoria para su panel de trabajo.');
+        }
         if ($idEditar === '') {
             $v->correo('correo')->unico('cuenta_usuario', 'correo', 'correo', 'correo electrónico');
             if (strlen((string)($_POST['password'] ?? '')) < 8) {
                 $v->fallo('password', 'La contraseña debe tener al menos 8 caracteres.');
             }
+        }
+        if ($this->texto('nueva_password') !== '' && strlen((string)$_POST['nueva_password']) < 8) {
+            $v->fallo('nueva_password', 'La nueva contraseña debe tener al menos 8 caracteres.');
         }
         if ($v->fallido()) {
             Flash::error(implode(' ', $v->mensajes()));
@@ -122,13 +132,17 @@ final class AdminSistemaController extends Controller
                     'ap_materno'  => trim((string)($_POST['ap_materno'] ?? '')),
                     'telefono'    => trim((string)$_POST['telefono']),
                     'id_rol'      => $idRol,
-                    'id_sucursal' => $this->texto('id_sucursal') !== '' ? $this->texto('id_sucursal') : null,
+                    'id_sucursal' => $idSucursal !== '' ? $idSucursal : null,
                 ],
                 $idEditar === '' ? (string)$_POST['correo'] : null,
                 $idEditar === '' ? (string)$_POST['password'] : null,
                 $this->texto('nueva_password') !== '' ? (string)$_POST['nueva_password'] : null
             );
-            Flash::ok($r['creado'] ? 'Usuario del personal registrado: ' . $r['id'] : 'Usuario actualizado.');
+            if ($r['creado']) {
+                Flash::ok(($idRol === 'ROL02' ? 'Empleado registrado: ' : 'Usuario administrador registrado: ') . $r['id']);
+            } else {
+                Flash::ok('Usuario actualizado.');
+            }
             if ($r['passwordCambiada']) {
                 Flash::ok('Contraseña restablecida.');
             }

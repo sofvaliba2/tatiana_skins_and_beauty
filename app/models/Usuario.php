@@ -12,10 +12,12 @@ final class Usuario extends Model
         return self::one(
             'SELECT c.id_cuentaUsuario, c.correo, c.password, c.id_rol, c.id_usuario,
                     r.nombre_rol,
-                    u.nombre, u.ap_paterno, u.ap_materno, u.telefono, u.id_sucursal
+                    u.nombre, u.ap_paterno, u.ap_materno, u.telefono, u.id_sucursal,
+                    s.nombre_sucursal
              FROM cuenta_usuario c
              JOIN rol r ON r.id_rol = c.id_rol
              LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
+             LEFT JOIN sucursal s ON s.id_sucursal = u.id_sucursal
              WHERE c.correo = ?
              LIMIT 1',
             [mb_strtolower(trim($correo))]
@@ -63,6 +65,75 @@ final class Usuario extends Model
         return self::all("SELECT id_usuario, nombre, ap_paterno FROM usuario WHERE id_rol = 'ROL03' ORDER BY nombre");
     }
 
+    /** Clientas vinculadas a una sucursal (por asignación directa o por historial de citas). */
+    public static function listaClientesDeSucursal(string $idSucursal): array
+    {
+        return self::all(
+            "SELECT u.id_usuario, u.nombre, u.ap_paterno
+             FROM usuario u
+             WHERE u.id_rol = 'ROL03'
+               AND (u.id_sucursal = ? OR EXISTS (
+                   SELECT 1 FROM reserva r
+                   WHERE r.id_usuario = u.id_usuario AND r.id_sucursal = ?
+               ))
+             ORDER BY u.nombre, u.ap_paterno",
+            [$idSucursal, $idSucursal]
+        );
+    }
+
+    /** Búsqueda de clientas limitada a la sucursal del empleado. */
+    public static function buscarClientesDeSucursal(string $q, int $pagina, int $porPagina, string $idSucursal): array
+    {
+        $sql = "SELECT u.*, c.correo,
+                       (SELECT COUNT(*) FROM reserva r2
+                        WHERE r2.id_usuario = u.id_usuario AND r2.id_sucursal = ?) AS reservas
+                FROM usuario u
+                LEFT JOIN cuenta_usuario c ON c.id_usuario = u.id_usuario
+                WHERE u.id_rol = 'ROL03'
+                  AND (u.id_sucursal = ? OR EXISTS (
+                      SELECT 1 FROM reserva r
+                      WHERE r.id_usuario = u.id_usuario AND r.id_sucursal = ?
+                  ))";
+        $params = [$idSucursal, $idSucursal, $idSucursal];
+        if ($q !== '') {
+            $sql .= ' AND (u.nombre LIKE ? OR u.ap_paterno LIKE ? OR u.ap_materno LIKE ? OR u.telefono LIKE ? OR c.correo LIKE ?)';
+            for ($i = 0; $i < 5; $i++) {
+                $params[] = '%' . $q . '%';
+            }
+        }
+        $total = self::contar($sql, $params);
+        $sql .= ' ORDER BY u.nombre, u.ap_paterno LIMIT ' . $porPagina . ' OFFSET ' . (($pagina - 1) * $porPagina);
+        return ['filas' => self::all($sql, $params), 'total' => $total];
+    }
+
+    public static function clienteDeSucursal(string $idUsuario, string $idSucursal): ?array
+    {
+        return self::one(
+            'SELECT u.*, c.correo
+             FROM usuario u
+             LEFT JOIN cuenta_usuario c ON c.id_usuario = u.id_usuario
+             WHERE u.id_usuario = ? AND u.id_rol = "ROL03"
+               AND (u.id_sucursal = ? OR EXISTS (
+                   SELECT 1 FROM reserva r
+                   WHERE r.id_usuario = u.id_usuario AND r.id_sucursal = ?
+               ))',
+            [$idUsuario, $idSucursal, $idSucursal]
+        );
+    }
+
+    public static function contarClientesDeSucursal(string $idSucursal): int
+    {
+        return (int)self::value(
+            "SELECT COUNT(*) FROM usuario u
+             WHERE u.id_rol = 'ROL03'
+               AND (u.id_sucursal = ? OR EXISTS (
+                   SELECT 1 FROM reserva r
+                   WHERE r.id_usuario = u.id_usuario AND r.id_sucursal = ?
+               ))",
+            [$idSucursal, $idSucursal]
+        );
+    }
+
     public static function buscarClientes(string $q, int $pagina, int $porPagina): array
     {
         $sql = "SELECT u.*, c.correo,
@@ -102,6 +173,20 @@ final class Usuario extends Model
              LEFT JOIN sucursal s ON s.id_sucursal = u.id_sucursal
              WHERE u.id_rol IN ("ROL01","ROL02")
              ORDER BY u.nombre'
+        );
+    }
+
+    /** Empleados (ROL02) con su cuenta y sucursal. */
+    public static function empleados(): array
+    {
+        return self::all(
+            'SELECT u.*, c.correo, r.nombre_rol, s.nombre_sucursal
+             FROM usuario u
+             JOIN cuenta_usuario c ON c.id_usuario = u.id_usuario
+             JOIN rol r ON r.id_rol = u.id_rol
+             LEFT JOIN sucursal s ON s.id_sucursal = u.id_sucursal
+             WHERE u.id_rol = "ROL02"
+             ORDER BY u.nombre, u.ap_paterno'
         );
     }
     public static function actualizarPerfilCliente(string $idUsuario, array $d): void

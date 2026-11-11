@@ -1,3 +1,8 @@
+<?php
+$uFooter = \App\Core\Auth::usuario();
+$esClienteFooter = ($uFooter['id_rol'] ?? '') === 'ROL03';
+$esStaffFooter = in_array($uFooter['id_rol'] ?? '', ['ROL01', 'ROL02'], true);
+?>
 <footer class="footer">
     <div class="container">
         <div class="footer-grid">
@@ -12,8 +17,14 @@
                 <ul>
                     <li><a href="<?= ruta('servicios') ?>">Servicios</a></li>
                     <li><a href="<?= ruta('catalogo') ?>">Productos</a></li>
+                    <?php if ($esClienteFooter): ?>
                     <li><a href="<?= ruta('reserva_nueva') ?>">Reservar cita</a></li>
                     <li><a href="<?= ruta('mis_reservas') ?>">Mis reservas</a></li>
+                    <?php elseif ($esStaffFooter): ?>
+                    <li><a href="<?= ruta(($uFooter['id_rol'] ?? '') === 'ROL02' ? 'empleado_dashboard' : 'admin_dashboard') ?>">Panel de trabajo</a></li>
+                    <?php else: ?>
+                    <li><a href="<?= ruta('login') ?>">Ingresar</a></li>
+                    <?php endif; ?>
                 </ul>
             </div>
             <div>

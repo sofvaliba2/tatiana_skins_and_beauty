@@ -28,6 +28,7 @@ final class Auth
             'apellidos'  => trim(($cuenta['ap_paterno'] ?? '') . ' ' . ($cuenta['ap_materno'] ?? '')),
             'telefono'   => (string)($cuenta['telefono'] ?? ''),
             'sucursal'   => (string)($cuenta['id_sucursal'] ?? ''),
+            'sucursal_nombre' => (string)($cuenta['nombre_sucursal'] ?? ''),
             'ultimo_acceso' => time(),
         ];
         return true;
@@ -60,6 +61,11 @@ final class Auth
     {
         $r = self::usuario()['id_rol'] ?? '';
         return $r === 'ROL01' || $r === 'ROL02';
+    }
+
+    public static function esEmpleado(): bool
+    {
+        return (self::usuario()['id_rol'] ?? '') === 'ROL02';
     }
 
     public static function esCliente(): bool

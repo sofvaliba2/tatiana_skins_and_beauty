@@ -16,7 +16,7 @@ if (($_GET['editar'] ?? '') !== '') {
 <div class="page-title">
     <div>
         <h1>Usuarios del personal</h1>
-        <p class="muted">Administradores y personal (ROL01 / ROL02) con acceso al panel.</p>
+        <p class="muted">Administradores (ROL01) y empleados (ROL02). Los empleados solo ven la información de su sucursal.</p>
     </div>
     <a class="btn btn-primary" href="<?= ruta('admin_usuarios', ['nuevo' => 1]) ?>"><?= icon('plus', 18) ?> Nuevo usuario</a>
 </div>
@@ -61,13 +61,14 @@ if (($_GET['editar'] ?? '') !== '') {
                     <option value="ROL01" <?= ($editar['id_rol'] ?? '') === 'ROL01' ? 'selected' : '' ?>>Administrador</option>
                 </select>
             </div>
-            <div class="field"><label>Sucursal</label>
+            <div class="field"><label>Sucursal <small>(obligatoria para empleados)</small></label>
                 <select class="input" name="id_sucursal">
                     <option value="">Sin sucursal asignada</option>
                     <?php foreach (($sucursales ?? []) as $s): ?>
                         <option value="<?= e($s['id_sucursal']) ?>" <?= (($editar['id_sucursal'] ?? '') === $s['id_sucursal']) ? 'selected' : '' ?>><?= e($s['nombre_sucursal']) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <small class="muted">El empleado verá las citas y la agenda de esta sucursal.</small>
             </div>
             <?php if ($editar === null): ?>
                 <div class="field"><label>Correo electrónico *</label><input class="input" type="email" name="correo" required placeholder="personal@tatiana.bo"></div>

@@ -7,6 +7,20 @@ use App\Controllers\ErroresController;
 
 final class Router
 {
+    /**
+     * Roles autorizados para cada nivel de ruta.
+     * null significa acceso público.
+     */
+    private const NIVELES = [
+        'publico'          => null,
+        'autenticado'      => ['ROL01', 'ROL02', 'ROL03'],
+        'admin'            => ['ROL01'],
+        'empleado'         => ['ROL02'],
+        'cliente'          => ['ROL03'],
+        'cliente_personal' => ['ROL01', 'ROL02', 'ROL03'],
+        'personal'         => ['ROL01', 'ROL02'],
+    ];
+
     public function __construct(private array $rutas)
     {
     }
@@ -23,18 +37,26 @@ final class Router
         [$clase, $metodo, $nivel] = $this->rutas[$vista];
         $usuario = Auth::usuario();
 
+        if (!array_key_exists($nivel, self::NIVELES)) {
+            error_log('[ROUTER] Nivel de acceso desconocido: ' . $nivel);
+            (new ErroresController())->denegado();
+            return;
+        }
+
         if ($nivel !== 'publico' && $usuario === null) {
             Flash::error('Inicia sesión para continuar.');
             $this->ir('login', ['next' => $vista]);
         }
-        $rol = $usuario['id_rol'] ?? '';
-        if (($nivel === 'admin' && $rol !== 'ROL01')
-            || ($nivel === 'personal' && !in_array($rol, ['ROL01', 'ROL02'], true))) {
+
+        $rol = (string)($usuario['id_rol'] ?? '');
+        $permitidos = self::NIVELES[$nivel];
+        if ($permitidos !== null && !in_array($rol, $permitidos, true)) {
             (new ErroresController())->denegado();
             return;
         }
+
         if (in_array($vista, ['login', 'registro'], true) && $usuario !== null) {
-            $this->ir($rol === 'ROL03' ? 'panel' : 'admin_dashboard');
+            $this->ir($this->destinoPorRol($rol));
         }
 
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !Csrf::validar()) {
@@ -48,6 +70,16 @@ final class Router
             error_log('[APP] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
             (new ErroresController())->error($e);
         }
+    }
+
+    private function destinoPorRol(string $rol): string
+    {
+        return match ($rol) {
+            'ROL01' => 'admin_dashboard',
+            'ROL02' => 'empleado_dashboard',
+            'ROL03' => 'panel',
+            default => 'home',
+        };
     }
 
     private function ir(string $vista, array $params = []): never

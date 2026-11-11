@@ -382,6 +382,38 @@ textarea.input { resize: vertical; min-height: 100px; }
 .timeline .ev::before { content: ''; position: absolute; left: -1.7rem; top: .35rem; width: 12px; height: 12px; border-radius: 50%; background: var(--morado); border: 3px solid #fff; box-shadow: 0 0 0 1.5px var(--morado); }
 .timeline .ev small { color: var(--texto-suave); }
 
+/* =========================================================
+   PANEL EMPLEADO (ROL02)
+   ========================================================= */
+.side button.item { width: 100%; background: transparent; border: 0; font-family: inherit; color: inherit; text-align: left; cursor: pointer; }
+.side button.item:hover { background: rgba(255,255,255,.08); color: #fff; }
+.side-logout { margin: 0; padding: 0; }
+.branch-chip { display: flex; align-items: center; gap: .6rem; margin: .2rem .4rem 1rem; padding: .7rem .8rem; border-radius: var(--radio-sm); background: rgba(255,255,255,.1); color: var(--lila-claro); }
+.branch-chip svg { flex-shrink: 0; opacity: .85; }
+.branch-chip span { min-width: 0; line-height: 1.15; }
+.branch-chip small { display: block; text-transform: uppercase; letter-spacing: .14em; font-size: .62rem; opacity: .7; }
+.branch-chip b { display: block; font-size: .85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.agenda-mini { display: flex; align-items: center; gap: .9rem; padding: .75rem 0; border-bottom: 1px solid var(--lila-suave); }
+.agenda-mini:last-child { border-bottom: 0; }
+.agenda-date { background: var(--lila-claro); border-radius: var(--radio-sm); text-align: center; padding: .45rem .2rem; color: var(--morado); min-width: 52px; flex-shrink: 0; }
+.agenda-date b { display: block; font-family: var(--f-display); font-size: 1.45rem; font-weight: 400; line-height: 1; }
+.agenda-date small { text-transform: uppercase; letter-spacing: .1em; font-size: .62rem; }
+
+.avail-slots { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .5rem; }
+.avail-chip { border: 1px solid var(--lila); background: #fff; color: var(--morado); border-radius: 999px; padding: .35rem .85rem; font-size: .83rem; cursor: pointer; transition: all .18s; }
+.avail-chip:hover { background: var(--lila-claro); }
+.avail-chip.active { background: var(--morado); border-color: var(--morado); color: #fff; }
+
+.sale-head, .sale-row { display: grid; grid-template-columns: minmax(0, 1fr) 72px 100px 100px 36px; gap: .6rem; align-items: center; }
+.sale-head { margin: 1.1rem 0 .5rem; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-suave); }
+.sale-head span:nth-child(3), .sale-head span:nth-child(4) { text-align: right; }
+.sale-row { margin-bottom: .6rem; }
+.sale-row .sale-item { min-width: 0; }
+.sale-unit, .sale-sub { text-align: right; font-size: .88rem; white-space: nowrap; }
+.sale-sub { font-weight: 500; color: var(--morado); }
+.sale-row .sale-remove { justify-self: end; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1024px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -409,6 +441,12 @@ textarea.input { resize: vertical; min-height: 100px; }
   .res-item { grid-template-columns: 64px 1fr; }
   .res-item > :last-child { grid-column: 1 / -1; }
   .recibo-grid { grid-template-columns: 1fr; }
+  .sale-head { display: none; }
+  .sale-row { grid-template-columns: minmax(0, 1fr) 64px 80px 36px; }
+  .sale-row .sale-item { grid-column: 1 / -1; }
+  .sale-unit { grid-column: 2; grid-row: 2; }
+  .sale-sub { grid-column: 3; grid-row: 2; }
+  .sale-row .sale-remove { grid-column: 4; grid-row: 2; }
 }
 @media (max-width: 520px) {
   .grid-4, .kpis, .pasos { grid-template-columns: 1fr; }
@@ -416,13 +454,17 @@ textarea.input { resize: vertical; min-height: 100px; }
   .form-card { padding: 1.5rem; }
   .table { display: block; overflow-x: auto; white-space: nowrap; }
   .hero-stats { gap: 1.4rem; }
+  .sale-row { grid-template-columns: minmax(0, 1fr) 52px 70px 32px; }
+  .sale-qty { grid-column: 1; grid-row: 2; }
 }
 
 /* ---------- Impresión (recibo) ---------- */
 @media print {
-  .nav, .footer, .no-print, .page-head { display: none !important; }
+  .nav, .footer, .no-print, .page-head, .side, .topbar, .side-logout { display: none !important; }
   body { background: #fff; }
-  .recibo { box-shadow: none; }
+  .admin { display: block; min-height: 0; background: #fff; }
+  .main { padding: 0; }
+  .recibo, .panel { box-shadow: none; }
 }
 
 

@@ -10,6 +10,20 @@ final class MetodoPago extends Model
         return self::all("SELECT * FROM metodo_pago WHERE estado = 'activo' OR estado IS NULL ORDER BY nombre_metodoPago");
     }
 
+    public static function porId(string $id): ?array
+    {
+        return self::one('SELECT * FROM metodo_pago WHERE id_metodoPago = ?', [$id]);
+    }
+
+    /** Método de pago existente y habilitado para una venta. */
+    public static function activo(string $id): ?array
+    {
+        return self::one(
+            "SELECT * FROM metodo_pago WHERE id_metodoPago = ? AND (estado = 'activo' OR estado IS NULL)",
+            [$id]
+        );
+    }
+
     public static function nombre(string $id): string
     {
         return (string)self::value('SELECT nombre_metodoPago FROM metodo_pago WHERE id_metodoPago = ?', [$id]);

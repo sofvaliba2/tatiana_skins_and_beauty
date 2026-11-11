@@ -56,6 +56,35 @@ final class Sucursal extends Model
         );
     }
 
+    /** Día de la semana en el formato usado por horario_sucursal. */
+    public static function diaSemana(string $fecha): string
+    {
+        $d = \DateTime::createFromFormat('Y-m-d', $fecha);
+        if ($d === false || $d->format('Y-m-d') !== $fecha) {
+            return '';
+        }
+        $mapa = [
+            1 => 'Lunes',
+            2 => 'Martes',
+            3 => 'Miercoles',
+            4 => 'Jueves',
+            5 => 'Viernes',
+            6 => 'Sabado',
+            7 => 'Domingo',
+        ];
+        return $mapa[(int)$d->format('N')] ?? '';
+    }
+
+    /** Horario activo de una sucursal para una fecha concreta. */
+    public static function horarioParaFecha(string $idSucursal, string $fecha): ?array
+    {
+        $dia = self::diaSemana($fecha);
+        if ($dia === '') {
+            return null;
+        }
+        return self::horarioDelDia($idSucursal, $dia);
+    }
+
     public static function guardar(?string $idEditar, array $datos): array
     {
         if ($idEditar !== null) {

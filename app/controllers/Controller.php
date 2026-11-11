@@ -25,7 +25,12 @@ abstract class Controller
         }
         try {
             $avisos['avisos_cliente'] = Reserva::contarPendientesDeUsuario((string)$u['id']);
-            if (Auth::esPersonal()) {
+            if (Auth::esEmpleado()) {
+                $sucursal = (string)($u['sucursal'] ?? '');
+                $avisos['avisos_admin'] = $sucursal !== ''
+                    ? Reserva::contarPendientesSucursal($sucursal)
+                    : 0;
+            } elseif (Auth::esAdmin()) {
                 $avisos['avisos_admin'] = Reserva::contarPendientes();
             }
         } catch (\Throwable $e) {

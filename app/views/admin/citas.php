@@ -103,7 +103,7 @@ $fc = $fichaCliente ?? null;
         <div class="person" style="margin-bottom:1.2rem">
             <span class="avatar" style="width:46px;height:46px"><?= e(mb_substr($cl['nombre'], 0, 1)) ?></span>
             <div><b style="color:var(--morado)"><?= e(trim($cl['nombre'] . ' ' . $cl['ap_paterno'] . ' ' . $cl['ap_materno'])) ?></b><br>
-            <small class="muted"><?= e($cl['telefono'] ?: 'Sin teléfono') ?><?= $cl['fecha_nacimiento'] ? ' · Nac.: ' . e(date('d/m/Y', strtotime($cl['fecha_nacimiento']))) : '' ?></small></div>
+            <small class="muted"><?= e($cl['telefono'] ?: 'Sin teléfono') ?><?= $cl['correo'] ? ' · ' . e($cl['correo']) : '' ?><?= $cl['fecha_nacimiento'] ? ' · Nac.: ' . e(date('d/m/Y', strtotime($cl['fecha_nacimiento']))) : '' ?></small></div>
         </div>
 
         <?php if (empty($fc['historial'])): ?>

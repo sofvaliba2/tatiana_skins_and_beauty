@@ -59,3 +59,6 @@ C:\xampp\mysql\bin\mysql.exe -u root < "C:\xampp\htdocs\tatiana_vistas\tatiana_s
 |---|---|---|---|
 | Administrador | `admin.test@test.bo` | `186c9075` | Acceso y control total del sistema, gestión de empleados, sucursales, horarios, servicios, inventario, reportes e historial clínico. |
 | Cliente | `quispeliz143@gmail.com` | `12345678` | Exploración de catálogo de tratamientos/productos, reserva de citas en línea por sucursal y consulta de historial de citas. |
+| Empleado | `empleado.test@test.bo` | `12345678` | Acceso al panel de empleado: agenda de citas por sucursal, clientes, historial de piel, ventas y pagos con comprobante, y edición de su perfil. No puede administrar usuarios, roles, sucursales ni ver reportes gerenciales. |
+
+> **Empleado de prueba:** pertenece a la sucursal **SUC01 – SOPOCACHI**. Las cuentas de empleado (`ROL02`) solo pueden crearse o editarse desde **Administrador → Usuarios**; no existe registro público para empleados.

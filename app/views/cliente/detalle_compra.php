@@ -3,12 +3,18 @@ $titulo = 'Compra ' . ($compra['nro_compra'] ?? '#' . $compra['id_compra']);
 $activo = 'panel';
 $carrito = count($_SESSION['carrito'] ?? []);
 $totalItems = array_sum(array_column($items, 'cantidad'));
+$esEmpleado = \App\Core\Auth::esEmpleado();
+$esAdmin = \App\Core\Auth::esAdmin();
+$volverRuta = $esEmpleado ? ruta('empleado_ventas') : ($esAdmin ? ruta('admin_dashboard') : ruta('mis_compras'));
+$volverTexto = $esEmpleado ? 'Ventas y pagos' : ($esAdmin ? 'Panel' : 'Mis compras');
+$seguirRuta = $esEmpleado ? ruta('empleado_ventas') : ruta('catalogo');
+$seguirTexto = $esEmpleado ? 'Volver a ventas' : 'Seguir comprando';
 require __DIR__ . '/../layout/header.php';
 ?>
 <section class="section">
     <div class="container" style="max-width:760px">
         <p class="muted" style="font-size:.9rem;margin-bottom:1rem">
-            <a href="<?= ruta('mis_compras') ?>">Mis compras</a> / <?= e($compra['nro_compra'] ?? '#' . $compra['id_compra']) ?>
+            <a href="<?= $volverRuta ?>"><?= e($volverTexto) ?></a> / <?= e($compra['nro_compra'] ?? '#' . $compra['id_compra']) ?>
         </p>
         <div class="card" style="padding:2rem">
             <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;align-items:flex-start">
@@ -23,14 +29,21 @@ require __DIR__ . '/../layout/header.php';
             </div>
 
             <?php if (empty($items)): ?>
-                <?= vacio('Esta compra no tiene productos registrados.', 'box') ?>
+                <?= vacio('Esta compra no tiene ítems registrados.', 'box') ?>
             <?php else: ?>
                 <table class="table" style="margin-top:1.5rem">
-                    <thead><tr><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right">P. unitario</th><th style="text-align:right">Subtotal</th></tr></thead>
+                    <thead><tr><th>Ítem</th><th style="text-align:center">Cant.</th><th style="text-align:right">P. unitario</th><th style="text-align:right">Subtotal</th></tr></thead>
                     <tbody>
                     <?php foreach ($items as $i): ?>
+                        <?php
+                        $nombreItem = (string)($i['nombre'] ?? $i['nombre_producto'] ?? $i['nombre_servicio'] ?? 'Ítem');
+                        $esServicio = ($i['tipo'] ?? 'producto') === 'servicio';
+                        ?>
                         <tr>
-                            <td><?= e($i['nombre_producto']) ?></td>
+                            <td>
+                                <?= e($nombreItem) ?>
+                                <small class="muted" style="display:block;font-size:.72rem"><?= $esServicio ? 'Servicio' : 'Producto' ?></small>
+                            </td>
                             <td style="text-align:center"><?= (int)$i['cantidad'] ?></td>
                             <td style="text-align:right"><?= bs($i['precio_unitario']) ?></td>
                             <td style="text-align:right"><?= bs($i['subtotal']) ?></td>
@@ -39,7 +52,7 @@ require __DIR__ . '/../layout/header.php';
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="3" style="text-align:right"><b><?= $totalItems ?> producto<?= $totalItems > 1 ? 's' : '' ?></b></td>
+                            <td colspan="3" style="text-align:right"><b><?= $totalItems ?> ítem<?= $totalItems > 1 ? 's' : '' ?></b></td>
                             <td style="text-align:right"><b><?= bs($compra['total_pagar']) ?></b></td>
                         </tr>
                     </tfoot>
@@ -48,7 +61,7 @@ require __DIR__ . '/../layout/header.php';
 
             <div style="display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap">
                 <button class="btn btn-outline" onclick="window.print()"><?= icon('print', 18) ?> Imprimir comprobante</button>
-                <a href="<?= ruta('catalogo') ?>" class="btn btn-outline">Seguir comprando</a>
+                <a href="<?= $seguirRuta ?>" class="btn btn-outline"><?= e($seguirTexto) ?></a>
             </div>
         </div>
     </div>
