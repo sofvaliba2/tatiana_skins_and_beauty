@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 22-10-2026 a las 03:06:07
+-- Tiempo de generación: 11-11-2026 a las 02:03:21
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `tatiana_skins_and_beauty_stea`
+-- Base de datos: `tatiana_skins_and_beauty_corregida`
 --
 
 -- --------------------------------------------------------
@@ -335,6 +335,13 @@ CREATE TABLE `metodo_pago` (
   `estado` varchar(15) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `metodo_pago`
+--
+
+INSERT INTO `metodo_pago` (`id_metodoPago`, `nombre_metodoPago`, `tipo`, `estado`) VALUES
+('MP01', 'Efectivo', 'Presencial', 'Activo');
+
 -- --------------------------------------------------------
 
 --
@@ -477,7 +484,7 @@ CREATE TABLE `servicio_por_categoria` (
 -- (Véase abajo para la vista actual)
 --
 CREATE TABLE `servicio_precio_duracion` (
-`nombre_servicio` varchar(80)
+`nombre` varchar(80)
 ,`precio` decimal(10,2)
 ,`duracion_minutos` int(11)
 );
@@ -797,7 +804,7 @@ CREATE TABLE `vw_ventas_por_producto` (
 --
 DROP TABLE IF EXISTS `compras_completas`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `compras_completas`  AS SELECT `compra`.`id_compra` AS `id_compra`, `compra`.`nro_compra` AS `nro_compra`, `compra`.`fecha_compra` AS `fecha_compra`, `compra`.`total_pagar` AS `total_pagar`, `usuario`.`nombre` AS `nombre`, `usuario`.`ap_paterno` AS `ap_paterno`, `usuario`.`ap_materno` AS `ap_materno`, `metodo_pago`.`nombre_metodoPago` AS `nombre_metodoPago` FROM ((`compra` join `usuario` on(`compra`.`id_usuario` = `usuario`.`id_usuario`)) join `metodo_pago` on(`compra`.`id_metodoPago` = `metodo_pago`.`id_metodoPago`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `compras_completas`  AS SELECT `c`.`id_compra` AS `id_compra`, `c`.`nro_compra` AS `nro_compra`, `c`.`fecha_compra` AS `fecha_compra`, `c`.`total_pagar` AS `total_pagar`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, `mp`.`nombre_metodoPago` AS `nombre_metodoPago` FROM ((`compra` `c` join `usuario` `u` on(`c`.`id_usuario` = `u`.`id_usuario`)) left join `metodo_pago` `mp` on(`c`.`id_metodoPago` = `mp`.`id_metodoPago`)) ;
 
 -- --------------------------------------------------------
 
@@ -806,7 +813,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `compras_por_metodo_pago`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `compras_por_metodo_pago`  AS SELECT `metodo_pago`.`nombre_metodoPago` AS `nombre_metodoPago`, `compra`.`id_compra` AS `id_compra`, `compra`.`nro_compra` AS `nro_compra`, `compra`.`fecha_compra` AS `fecha_compra`, `compra`.`total_pagar` AS `total_pagar` FROM (`compra` join `metodo_pago` on(`compra`.`id_metodoPago` = `metodo_pago`.`id_metodoPago`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `compras_por_metodo_pago`  AS SELECT `mp`.`nombre_metodoPago` AS `nombre_metodoPago`, `c`.`id_compra` AS `id_compra`, `c`.`nro_compra` AS `nro_compra`, `c`.`fecha_compra` AS `fecha_compra`, `c`.`total_pagar` AS `total_pagar` FROM (`compra` `c` join `metodo_pago` `mp` on(`c`.`id_metodoPago` = `mp`.`id_metodoPago`)) ;
 
 -- --------------------------------------------------------
 
@@ -815,7 +822,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `compras_por_usuario`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `compras_por_usuario`  AS SELECT `usuario`.`id_usuario` AS `id_usuario`, `usuario`.`nombre` AS `nombre`, `usuario`.`ap_paterno` AS `ap_paterno`, `usuario`.`ap_materno` AS `ap_materno`, `compra`.`id_compra` AS `id_compra`, `compra`.`nro_compra` AS `nro_compra`, `compra`.`fecha_compra` AS `fecha_compra`, `compra`.`total_pagar` AS `total_pagar` FROM (`compra` join `usuario` on(`compra`.`id_usuario` = `usuario`.`id_usuario`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `compras_por_usuario`  AS SELECT `u`.`id_usuario` AS `id_usuario`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, `c`.`id_compra` AS `id_compra`, `c`.`nro_compra` AS `nro_compra`, `c`.`fecha_compra` AS `fecha_compra`, `c`.`total_pagar` AS `total_pagar` FROM (`compra` `c` join `usuario` `u` on(`c`.`id_usuario` = `u`.`id_usuario`)) ;
 
 -- --------------------------------------------------------
 
@@ -824,7 +831,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `detalle_compras`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `detalle_compras`  AS SELECT `compra`.`id_compra` AS `id_compra`, `compra`.`nro_compra` AS `nro_compra`, `compra`.`fecha_compra` AS `fecha_compra`, `producto`.`nombre_producto` AS `nombre_producto`, `detalle_compra`.`cantidad` AS `cantidad`, `detalle_compra`.`precio_unitario` AS `precio_unitario`, `detalle_compra`.`subtotal` AS `subtotal` FROM ((`compra` join `detalle_compra` on(`compra`.`id_compra` = `detalle_compra`.`id_compra`)) join `producto` on(`detalle_compra`.`id_producto` = `producto`.`id_producto`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `detalle_compras`  AS SELECT `c`.`id_compra` AS `id_compra`, `c`.`nro_compra` AS `nro_compra`, `c`.`fecha_compra` AS `fecha_compra`, `p`.`nombre_producto` AS `nombre_producto`, `dc`.`cantidad` AS `cantidad`, `dc`.`precio_unitario` AS `precio_unitario`, `dc`.`subtotal` AS `subtotal` FROM ((`compra` `c` join `detalle_compra` `dc` on(`c`.`id_compra` = `dc`.`id_compra`)) join `producto` `p` on(`dc`.`id_producto` = `p`.`id_producto`)) ;
 
 -- --------------------------------------------------------
 
@@ -833,7 +840,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `idx_reservas_sucursal`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `idx_reservas_sucursal`  AS SELECT `sucursal`.`nombre_sucursal` AS `nombre_sucursal`, `reserva`.`id_reserva` AS `id_reserva`, `reserva`.`fecha` AS `fecha_reserva`, `reserva`.`estado` AS `estado_reserva` FROM (`reserva` join `sucursal` on(`reserva`.`id_sucursal` = `sucursal`.`id_sucursal`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `idx_reservas_sucursal`  AS SELECT `s`.`nombre_sucursal` AS `nombre_sucursal`, `r`.`id_reserva` AS `id_reserva`, `r`.`fecha` AS `fecha_reserva`, `r`.`estado` AS `estado_reserva` FROM (`reserva` `r` join `sucursal` `s` on(`r`.`id_sucursal` = `s`.`id_sucursal`)) ;
 
 -- --------------------------------------------------------
 
@@ -860,7 +867,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `ingresos_reservas`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `ingresos_reservas`  AS SELECT `reserva`.`id_reserva` AS `id_reserva`, `reserva`.`fecha` AS `fecha`, `reserva`.`estado` AS `estado`, sum(`detalle_reserva`.`subtotal`) AS `total_ingreso` FROM (`reserva` join `detalle_reserva` on(`reserva`.`id_reserva` = `detalle_reserva`.`id_reserva`)) GROUP BY `reserva`.`id_reserva`, `reserva`.`fecha`, `reserva`.`estado` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `ingresos_reservas`  AS SELECT `r`.`id_reserva` AS `id_reserva`, `r`.`fecha` AS `fecha`, `r`.`estado` AS `estado`, sum(`dr`.`subtotal`) AS `total_ingreso` FROM (`reserva` `r` join `detalle_reserva` `dr` on(`r`.`id_reserva` = `dr`.`id_reserva`)) GROUP BY `r`.`id_reserva`, `r`.`fecha`, `r`.`estado` ;
 
 -- --------------------------------------------------------
 
@@ -869,7 +876,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `reservas_por_metodo_pago`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `reservas_por_metodo_pago`  AS SELECT `metodo_pago`.`nombre_metodoPago` AS `nombre_metodoPago`, `reserva`.`id_reserva` AS `id_reserva`, `reserva`.`fecha` AS `fecha`, `reserva`.`hora` AS `hora`, `reserva`.`estado` AS `estado` FROM (`reserva` join `metodo_pago` on(`reserva`.`id_metodoPago` = `metodo_pago`.`id_metodoPago`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `reservas_por_metodo_pago`  AS SELECT `mp`.`nombre_metodoPago` AS `nombre_metodoPago`, `r`.`id_reserva` AS `id_reserva`, `r`.`fecha` AS `fecha`, `r`.`hora` AS `hora`, `r`.`estado` AS `estado` FROM (`reserva` `r` join `metodo_pago` `mp` on(`r`.`id_metodoPago` = `mp`.`id_metodoPago`)) ;
 
 -- --------------------------------------------------------
 
@@ -878,7 +885,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `servicio_categoria`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `servicio_categoria`  AS SELECT `servicio`.`nombre` AS `nombre_servicio`, `servicio`.`descripcion` AS `descripcion`, `servicio`.`precio` AS `precio`, `categoria_servicio`.`nombre_cservicio` AS `nombre_categoria` FROM (`categoria_servicio` join `servicio` on(`categoria_servicio`.`id_categoriaS` = `servicio`.`id_categoriaS`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `servicio_categoria`  AS SELECT `s`.`nombre` AS `nombre_servicio`, `s`.`descripcion` AS `descripcion`, `s`.`precio` AS `precio`, `cs`.`nombre_cservicio` AS `nombre_categoria` FROM (`categoria_servicio` `cs` join `servicio` `s` on(`cs`.`id_categoriaS` = `s`.`id_categoriaS`)) ;
 
 -- --------------------------------------------------------
 
@@ -887,7 +894,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `servicio_por_categoria`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `servicio_por_categoria`  AS SELECT `categoria_servicio`.`nombre_cservicio` AS `nombre_categoria`, `servicio`.`id_servicio` AS `id_servicio`, `servicio`.`nombre` AS `nombre_servicio`, `servicio`.`precio` AS `precio` FROM (`categoria_servicio` join `servicio` on(`categoria_servicio`.`id_categoriaS` = `servicio`.`id_categoriaS`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `servicio_por_categoria`  AS SELECT `cs`.`nombre_cservicio` AS `nombre_categoria`, `s`.`id_servicio` AS `id_servicio`, `s`.`nombre` AS `nombre_servicio`, `s`.`precio` AS `precio` FROM (`categoria_servicio` `cs` join `servicio` `s` on(`cs`.`id_categoriaS` = `s`.`id_categoriaS`)) ;
 
 -- --------------------------------------------------------
 
@@ -896,7 +903,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `servicio_precio_duracion`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `servicio_precio_duracion`  AS SELECT `servicio`.`nombre` AS `nombre_servicio`, `servicio`.`precio` AS `precio`, `servicio`.`duracion_minutos` AS `duracion_minutos` FROM `servicio` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `servicio_precio_duracion`  AS SELECT `servicio`.`nombre` AS `nombre`, `servicio`.`precio` AS `precio`, `servicio`.`duracion_minutos` AS `duracion_minutos` FROM `servicio` ;
 
 -- --------------------------------------------------------
 
@@ -914,7 +921,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `total_gastado_usuario`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `total_gastado_usuario`  AS SELECT `usuario`.`id_usuario` AS `id_usuario`, `usuario`.`nombre` AS `nombre`, `usuario`.`ap_paterno` AS `ap_paterno`, `usuario`.`ap_materno` AS `ap_materno`, count(`compra`.`id_compra`) AS `cantidad_compras`, sum(`compra`.`total_pagar`) AS `total_gastado` FROM (`compra` join `usuario` on(`compra`.`id_usuario` = `usuario`.`id_usuario`)) GROUP BY `usuario`.`id_usuario`, `usuario`.`nombre`, `usuario`.`ap_paterno`, `usuario`.`ap_materno` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `total_gastado_usuario`  AS SELECT `u`.`id_usuario` AS `id_usuario`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, count(`c`.`id_compra`) AS `cantidad_compras`, sum(`c`.`total_pagar`) AS `total_gastado` FROM (`compra` `c` join `usuario` `u` on(`c`.`id_usuario` = `u`.`id_usuario`)) GROUP BY `u`.`id_usuario`, `u`.`nombre`, `u`.`ap_paterno`, `u`.`ap_materno` ;
 
 -- --------------------------------------------------------
 
@@ -923,7 +930,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `vw_clientes`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_clientes`  AS SELECT `u`.`id_usuario` AS `id_usuario`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, `u`.`telefono` AS `telefono`, `u`.`fecha_nacimiento` AS `fecha_nacimiento`, `r`.`nombre_rol` AS `nombre_rol` FROM (`usuario` `u` join `rol` `r` on(`u`.`id_rol` = `r`.`id_rol`)) WHERE `r`.`nombre_rol` = 'Cliente' ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_clientes`  AS SELECT `u`.`id_usuario` AS `id_usuario`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, `u`.`telefono` AS `telefono`, `u`.`fecha_nacimiento` AS `fecha_nacimiento`, `r`.`nombre_rol` AS `nombre_rol` FROM (`usuario` `u` join `rol` `r` on(`u`.`id_rol` = `r`.`id_rol`)) WHERE `r`.`nombre_rol` = 'cliente' ;
 
 -- --------------------------------------------------------
 
@@ -932,7 +939,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `vw_clientes_con_reservas`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_clientes_con_reservas`  AS SELECT `u`.`id_usuario` AS `id_usuario`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, `r`.`id_reserva` AS `id_reserva`, `r`.`estado` AS `estado` FROM ((`usuario` `u` join `reserva` `r` on(`u`.`id_usuario` = `r`.`id_usuario`)) join `rol` `ro` on(`u`.`id_rol` = `ro`.`id_rol`)) WHERE `ro`.`nombre_rol` = 'Cliente' ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_clientes_con_reservas`  AS SELECT `u`.`id_usuario` AS `id_usuario`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, `r`.`id_reserva` AS `id_reserva`, `r`.`estado` AS `estado` FROM ((`usuario` `u` join `reserva` `r` on(`u`.`id_usuario` = `r`.`id_usuario`)) join `rol` `ro` on(`u`.`id_rol` = `ro`.`id_rol`)) WHERE `ro`.`nombre_rol` = 'cliente' ;
 
 -- --------------------------------------------------------
 
@@ -959,7 +966,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `vw_empleados_por_sucursal`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_empleados_por_sucursal`  AS SELECT `u`.`id_usuario` AS `id_usuario`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, `u`.`telefono` AS `telefono`, `r`.`nombre_rol` AS `nombre_rol`, `s`.`nombre_sucursal` AS `nombre_sucursal` FROM ((`usuario` `u` join `rol` `r` on(`u`.`id_rol` = `r`.`id_rol`)) join `sucursal` `s` on(`u`.`id_sucursal` = `s`.`id_sucursal`)) WHERE `r`.`nombre_rol` <> 'Cliente' ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_empleados_por_sucursal`  AS SELECT `u`.`id_usuario` AS `id_usuario`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, `u`.`telefono` AS `telefono`, `r`.`nombre_rol` AS `nombre_rol`, `s`.`nombre_sucursal` AS `nombre_sucursal` FROM ((`usuario` `u` join `rol` `r` on(`u`.`id_rol` = `r`.`id_rol`)) join `sucursal` `s` on(`u`.`id_sucursal` = `s`.`id_sucursal`)) WHERE `r`.`nombre_rol` <> 'cliente' ;
 
 -- --------------------------------------------------------
 
@@ -1040,7 +1047,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `vw_sucursales_personal`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_sucursales_personal`  AS SELECT `s`.`id_sucursal` AS `id_sucursal`, `s`.`nombre_sucursal` AS `nombre_sucursal`, `u`.`id_usuario` AS `id_usuario`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, `r`.`nombre_rol` AS `nombre_rol` FROM ((`sucursal` `s` join `usuario` `u` on(`s`.`id_sucursal` = `u`.`id_sucursal`)) join `rol` `r` on(`u`.`id_rol` = `r`.`id_rol`)) WHERE `r`.`nombre_rol` <> 'Cliente' ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_sucursales_personal`  AS SELECT `s`.`id_sucursal` AS `id_sucursal`, `s`.`nombre_sucursal` AS `nombre_sucursal`, `u`.`id_usuario` AS `id_usuario`, `u`.`nombre` AS `nombre`, `u`.`ap_paterno` AS `ap_paterno`, `u`.`ap_materno` AS `ap_materno`, `r`.`nombre_rol` AS `nombre_rol` FROM ((`sucursal` `s` join `usuario` `u` on(`s`.`id_sucursal` = `u`.`id_sucursal`)) join `rol` `r` on(`u`.`id_rol` = `r`.`id_rol`)) WHERE `r`.`nombre_rol` <> 'cliente' ;
 
 -- --------------------------------------------------------
 
@@ -1081,10 +1088,9 @@ ALTER TABLE `categoria_servicio`
 --
 ALTER TABLE `compra`
   ADD PRIMARY KEY (`id_compra`),
-  ADD KEY `fk_usuarioCompra` (`id_usuario`),
-  ADD KEY `fk_metodoPagoCompra` (`id_metodoPago`),
   ADD KEY `idx_compra_fecha` (`fecha_compra`),
-  ADD KEY `idx_compra_usuario` (`id_usuario`);
+  ADD KEY `fk_usuarioCompra` (`id_usuario`),
+  ADD KEY `fk_metodoPagoCompra` (`id_metodoPago`);
 
 --
 -- Indices de la tabla `cuenta_usuario`
@@ -1098,23 +1104,192 @@ ALTER TABLE `cuenta_usuario`
 -- Indices de la tabla `detalle_compra`
 --
 ALTER TABLE `detalle_compra`
-  ADD KEY `idx_detalle_compra_producto` (`id_producto`);
+  ADD PRIMARY KEY (`id_detalle`),
+  ADD KEY `fk_detalle_compra_maestro` (`id_compra`),
+  ADD KEY `fk_detalle_compra_producto` (`id_producto`);
+
+--
+-- Indices de la tabla `detalle_reserva`
+--
+ALTER TABLE `detalle_reserva`
+  ADD PRIMARY KEY (`id_detalle`),
+  ADD KEY `fk_detalle_reserva_servicio` (`id_servicio`),
+  ADD KEY `fk_detalle_reserva_maestro` (`id_reserva`);
+
+--
+-- Indices de la tabla `historial_cliente`
+--
+ALTER TABLE `historial_cliente`
+  ADD PRIMARY KEY (`id_historial`),
+  ADD KEY `fk_historial_reserva` (`id_reserva`);
+
+--
+-- Indices de la tabla `horario_sucursal`
+--
+ALTER TABLE `horario_sucursal`
+  ADD PRIMARY KEY (`id_horario`),
+  ADD KEY `fk_horario_sucursal` (`id_sucursal`);
+
+--
+-- Indices de la tabla `metodo_pago`
+--
+ALTER TABLE `metodo_pago`
+  ADD PRIMARY KEY (`id_metodoPago`);
 
 --
 -- Indices de la tabla `producto`
 --
 ALTER TABLE `producto`
+  ADD PRIMARY KEY (`id_producto`),
   ADD KEY `idx_producto_nombre` (`nombre_producto`),
-  ADD KEY `idx_producto_categoria` (`id_categoria`),
-  ADD KEY `idx_producto_precio` (`precio`);
+  ADD KEY `fk_producto_categoria` (`id_categoria`);
+
+--
+-- Indices de la tabla `reserva`
+--
+ALTER TABLE `reserva`
+  ADD PRIMARY KEY (`id_reserva`),
+  ADD KEY `fk_reserva_sucursal` (`id_sucursal`),
+  ADD KEY `fk_reserva_metodoPago` (`id_metodoPago`),
+  ADD KEY `fk_reserva_usuario` (`id_usuario`);
+
+--
+-- Indices de la tabla `rol`
+--
+ALTER TABLE `rol`
+  ADD PRIMARY KEY (`id_rol`);
+
+--
+-- Indices de la tabla `servicio`
+--
+ALTER TABLE `servicio`
+  ADD PRIMARY KEY (`id_servicio`),
+  ADD KEY `fk_servicio_categoria` (`id_categoriaS`);
+
+--
+-- Indices de la tabla `sucursal`
+--
+ALTER TABLE `sucursal`
+  ADD PRIMARY KEY (`id_sucursal`);
 
 --
 -- Indices de la tabla `usuario`
 --
 ALTER TABLE `usuario`
+  ADD PRIMARY KEY (`id_usuario`),
   ADD KEY `idx_usuario_rol` (`id_rol`),
-  ADD KEY `idx_usuario_sucursal` (`id_sucursal`),
-  ADD KEY `idx_usuario_sucursal_rol` (`id_sucursal`,`id_rol`);
+  ADD KEY `idx_usuario_sucursal` (`id_sucursal`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `compra`
+--
+ALTER TABLE `compra`
+  MODIFY `id_compra` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `cuenta_usuario`
+--
+ALTER TABLE `cuenta_usuario`
+  MODIFY `id_cuentaUsuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `detalle_compra`
+--
+ALTER TABLE `detalle_compra`
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `detalle_reserva`
+--
+ALTER TABLE `detalle_reserva`
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `historial_cliente`
+--
+ALTER TABLE `historial_cliente`
+  MODIFY `id_historial` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `reserva`
+--
+ALTER TABLE `reserva`
+  MODIFY `id_reserva` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `compra`
+--
+ALTER TABLE `compra`
+  ADD CONSTRAINT `fk_metodoPagoCompra` FOREIGN KEY (`id_metodoPago`) REFERENCES `metodo_pago` (`id_metodoPago`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_usuarioCompra` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `cuenta_usuario`
+--
+ALTER TABLE `cuenta_usuario`
+  ADD CONSTRAINT `fk_rolCuenta` FOREIGN KEY (`id_rol`) REFERENCES `rol` (`id_rol`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_usuarioCuenta` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `detalle_compra`
+--
+ALTER TABLE `detalle_compra`
+  ADD CONSTRAINT `fk_detalle_compra_maestro` FOREIGN KEY (`id_compra`) REFERENCES `compra` (`id_compra`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_detalle_compra_producto` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `detalle_reserva`
+--
+ALTER TABLE `detalle_reserva`
+  ADD CONSTRAINT `fk_detalle_reserva_maestro` FOREIGN KEY (`id_reserva`) REFERENCES `reserva` (`id_reserva`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_detalle_reserva_servicio` FOREIGN KEY (`id_servicio`) REFERENCES `servicio` (`id_servicio`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `historial_cliente`
+--
+ALTER TABLE `historial_cliente`
+  ADD CONSTRAINT `fk_historial_reserva` FOREIGN KEY (`id_reserva`) REFERENCES `reserva` (`id_reserva`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `horario_sucursal`
+--
+ALTER TABLE `horario_sucursal`
+  ADD CONSTRAINT `fk_horario_sucursal` FOREIGN KEY (`id_sucursal`) REFERENCES `sucursal` (`id_sucursal`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `producto`
+--
+ALTER TABLE `producto`
+  ADD CONSTRAINT `fk_producto_categoria` FOREIGN KEY (`id_categoria`) REFERENCES `categoria_producto` (`id_categoria`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `reserva`
+--
+ALTER TABLE `reserva`
+  ADD CONSTRAINT `fk_reserva_metodoPago` FOREIGN KEY (`id_metodoPago`) REFERENCES `metodo_pago` (`id_metodoPago`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_reserva_sucursal` FOREIGN KEY (`id_sucursal`) REFERENCES `sucursal` (`id_sucursal`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_reserva_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `servicio`
+--
+ALTER TABLE `servicio`
+  ADD CONSTRAINT `fk_servicio_categoria` FOREIGN KEY (`id_categoriaS`) REFERENCES `categoria_servicio` (`id_categoriaS`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  ADD CONSTRAINT `fk_usuario_rol` FOREIGN KEY (`id_rol`) REFERENCES `rol` (`id_rol`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_usuario_sucursal` FOREIGN KEY (`id_sucursal`) REFERENCES `sucursal` (`id_sucursal`) ON DELETE SET NULL;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
