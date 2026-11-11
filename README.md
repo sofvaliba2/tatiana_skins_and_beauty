@@ -26,9 +26,11 @@ La carpeta debe quedar exactamente así (si descargó el ZIP, 'tatiana_skins_and
 ```text
 C:\xampp\htdocs\tatiana_skins_and_beauty\
     ├─ app\
-    ├─ public\
+    ├─ bin\
+    ├─ config\
     ├─ database\
-    ├─ index.php
+    ├─ public\
+    ├─ storage\
     └─ ...
 ```
 El sistema calcula su dirección base automáticamente, así que también funciona en otra subcarpeta de `htdocs`.
