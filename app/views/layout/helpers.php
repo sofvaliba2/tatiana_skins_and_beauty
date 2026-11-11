@@ -112,6 +112,56 @@ function estado(string $e): string
     return '<span class="badge-st st-' . e($k) . '">' . e(ucfirst($e)) . '</span>';
 }
 
+/** Insignia legible del estado del pago de una reserva. */
+function estado_pago(string $estadoPago): string
+{
+    $mapa = [
+        'sin_pago'            => ['Sin pago', 'st-pendiente'],
+        'pendiente_efectivo'  => ['Efectivo pendiente', 'st-pendiente'],
+        'por_verificar'       => ['Por verificar', 'st-por_verificar'],
+        'anticipo_confirmado' => ['Anticipo confirmado', 'st-anticipo_confirmado'],
+        'parcial'             => ['Pago parcial', 'st-pendiente'],
+        'pagado'              => ['Pagado', 'st-pagado'],
+        'rechazado'           => ['Rechazado', 'st-rechazado'],
+    ];
+    $clave = strtolower(trim($estadoPago));
+    [$texto, $clase] = $mapa[$clave] ?? [ucfirst(str_replace('_', ' ', $clave)), 'st-pendiente'];
+    return '<span class="badge-st ' . $clase . '">' . e($texto) . '</span>';
+}
+
+/** URL pública de un archivo guardado (uploads/...), absoluta o relativa. */
+function url_archivo(?string $ruta): string
+{
+    $ruta = trim((string)$ruta);
+    if ($ruta === '') {
+        return '';
+    }
+    if (preg_match('#^https?://#i', $ruta)) {
+        return $ruta;
+    }
+    $ruta = ltrim(str_replace('\\', '/', $ruta), '/');
+    if (str_starts_with($ruta, 'public/')) {
+        $ruta = substr($ruta, 7);
+    }
+    return BASE_URL . '/' . $ruta;
+}
+
+/** Radios Sí/No reutilizables en formularios dinámicos. */
+function radios_si_no(string $campo, string $valorActual = ''): string
+{
+    $valor = strtolower(trim($valorActual));
+    if ($valor === 'sí') {
+        $valor = 'si';
+    }
+    $html = '<div class="chips">';
+    foreach (['si' => 'Sí', 'no' => 'No'] as $v => $texto) {
+        $id = $campo . '_' . $v . '_' . substr(md5($campo . $texto), 0, 4);
+        $html .= '<label class="chip" for="' . e($id) . '"><input type="radio" id="' . e($id) . '" name="' . e($campo)
+            . '" value="' . $v . '"' . ($valor === $v ? ' checked' : '') . '><span>' . $texto . '</span></label>';
+    }
+    return $html . '</div>';
+}
+
 /** Formato de dinero: Bs. 1,234.56 */
 function bs($monto): string
 {

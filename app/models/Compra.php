@@ -5,13 +5,48 @@ namespace App\Models;
 
 final class Compra extends Model
 {
+    /**
+     * Registra una compra. Los precios y el stock SIEMPRE se leen de MySQL:
+     * lo que llega del carrito (sesión o formulario) no puede alterar importes.
+     */
     public static function crear(string $idUsuario, ?string $idMetodo, array $items): array
     {
         return self::transaccion(function () use ($idUsuario, $idMetodo, $items) {
+            $detalle = [];
             $total = 0.0;
+
             foreach ($items as $item) {
-                $total += $item['precio'] * $item['cantidad'];
+                $idProducto = (string)($item['id'] ?? $item['id_producto'] ?? '');
+                $cantidad = (int)($item['cantidad'] ?? 0);
+                if ($idProducto === '' || $cantidad <= 0) {
+                    throw new \RuntimeException('El carrito contiene un producto no válido.');
+                }
+                $producto = Producto::paraCarrito($idProducto);
+                if ($producto === null) {
+                    throw new \RuntimeException('Un producto del carrito ya no existe.');
+                }
+                if ((int)$producto['stock'] < $cantidad) {
+                    throw new \RuntimeException('No hay stock suficiente de ' . $producto['nombre_producto'] . '.');
+                }
+                $precio = (float)$producto['precio'];
+                if ($precio < 0) {
+                    throw new \RuntimeException('El precio de un producto no es válido.');
+                }
+                $cantidad = min($cantidad, (int)$producto['stock']);
+                $subtotal = $precio * $cantidad;
+                $total += $subtotal;
+                $detalle[] = [
+                    'id'       => $idProducto,
+                    'cantidad' => $cantidad,
+                    'precio'   => $precio,
+                    'subtotal' => $subtotal,
+                ];
             }
+
+            if ($detalle === []) {
+                throw new \RuntimeException('El carrito está vacío.');
+            }
+
             $nro = 'C-' . str_pad((string)((int)self::value('SELECT COALESCE(MAX(id_compra),0) FROM compra') + 1), 6, '0', STR_PAD_LEFT);
             $idCompra = Ids::insertarConEntero('compra', 'id_compra', [
                 'fecha_compra'  => date('Y-m-d'),
@@ -20,15 +55,18 @@ final class Compra extends Model
                 'id_usuario'    => $idUsuario,
                 'id_metodoPago' => $idMetodo,
             ]);
-            foreach ($items as $item) {
+            foreach ($detalle as $item) {
+                // Descuento condicional: si otra compra agotó el stock, se revierte todo.
+                if (!Producto::descontarStockSeguro($item['id'], $item['cantidad'])) {
+                    throw new \RuntimeException('El stock cambió mientras confirmabas la compra. Revisa tu carrito.');
+                }
                 Ids::insertarConEntero('detalle_compra', 'id_detalle', [
                     'cantidad'        => $item['cantidad'],
                     'precio_unitario' => $item['precio'],
-                    'subtotal'        => $item['precio'] * $item['cantidad'],
+                    'subtotal'        => $item['subtotal'],
                     'id_compra'       => $idCompra,
                     'id_producto'     => $item['id'],
                 ]);
-                Producto::descontarStock((string)$item['id'], (int)$item['cantidad']);
             }
             return ['id' => $idCompra, 'nro' => $nro, 'total' => $total];
         });

@@ -21,19 +21,20 @@ require __DIR__ . '/../layout/admin_header.php';
         <?= vacio('No hay pagos pendientes. ¡Todo al día!', 'check') ?>
     <?php else: ?>
     <table class="table">
-        <thead><tr><th>Reserva</th><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Teléfono</th><th>Sucursal</th><th>Comprobante</th><th></th></tr></thead>
+        <thead><tr><th>Reserva</th><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Teléfono</th><th>Sucursal</th><th>Total / anticipo</th><th>Comprobante</th><th></th></tr></thead>
         <tbody>
-        <?php foreach ($pendientes as $p): $comp = is_file(BASE_PATH . '/public/uploads/comprobantes/res_' . $p['id_reserva'] . '.jpg'); ?>
+        <?php foreach ($pendientes as $p): $comp = trim((string)($p['comprobante_actual'] ?? $p['comprobante'] ?? '')); ?>
             <tr>
                 <td><b>#<?= (int)$p['id_reserva'] ?></b></td>
-                <td><?= e(date('d/m/Y', strtotime($p['fecha']))) ?></td>
+                <td><?= e(date('d/m/Y', strtotime((string)$p['fecha']))) ?></td>
                 <td><?= e(substr((string)$p['hora'], 0, 5)) ?></td>
                 <td><?= e($p['cliente']) ?></td>
                 <td><?= e($p['telefono'] ?: '—') ?></td>
                 <td><?= e($p['nombre_sucursal'] ?? '—') ?></td>
+                <td><?= bs($p['precio_total'] ?? 0) ?><br><small class="muted">Anticipo <?= bs($p['anticipo'] ?? 0) ?></small></td>
                 <td>
-                    <?php if ($comp): ?>
-                        <a class="link" href="<?= BASE_URL ?>/uploads/comprobantes/res_<?= (int)$p['id_reserva'] ?>.jpg" target="_blank">Ver comprobante</a>
+                    <?php if ($comp !== ''): ?>
+                        <a class="link" href="<?= e(url_archivo($comp)) ?>" target="_blank">Ver comprobante</a>
                     <?php else: ?>
                         <span class="muted">No adjunto</span>
                     <?php endif; ?>

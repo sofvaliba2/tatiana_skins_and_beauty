@@ -36,6 +36,129 @@ final class Validate
         return $this;
     }
 
+    /**
+     * Nombres y apellidos: solo letras (incluye acentos y ñ), espacios,
+     * apóstrofes o guiones. Acepta nombres compuestos.
+     */
+    public function nombrePersona(string $campo, string $etiqueta, int $min = 2, int $max = 60, bool $obligatorio = true): self
+    {
+        $v = trim((string)($_POST[$campo] ?? ''));
+        $v = preg_replace('/\s+/u', ' ', $v) ?? $v;
+        if ($v === '') {
+            if ($obligatorio) {
+                $this->fallo($campo, "El campo {$etiqueta} es obligatorio.");
+            }
+            return $this;
+        }
+        if (mb_strlen($v) < $min) {
+            $this->fallo($campo, "{$etiqueta} debe tener al menos {$min} caracteres.");
+        } elseif (mb_strlen($v) > $max) {
+            $this->fallo($campo, "{$etiqueta} no puede superar {$max} caracteres.");
+        } elseif (!preg_match("/^[\p{L}\s'’\-]+$/u", $v)) {
+            $this->fallo($campo, "{$etiqueta} solo puede contener letras, espacios, apóstrofes o guiones (sin números ni símbolos).");
+        }
+        return $this;
+    }
+
+    /** Deja solo los 8 dígitos del celular boliviano (quita +591, espacios y guiones). */
+    public static function normalizarTelefono(string $valor): string
+    {
+        $v = preg_replace('/[\s\-\(\)\.]/', '', trim($valor)) ?? '';
+        if (str_starts_with($v, '+591')) {
+            $v = substr($v, 4);
+        } elseif (str_starts_with($v, '591') && strlen($v) === 11) {
+            $v = substr($v, 3);
+        }
+        return preg_replace('/\D/', '', $v) ?? '';
+    }
+
+    public function telefonoBolivia(string $campo = 'telefono', bool $obligatorio = true): self
+    {
+        $v = self::normalizarTelefono((string)($_POST[$campo] ?? ''));
+        if ($v === '') {
+            if ($obligatorio) {
+                $this->fallo($campo, 'El teléfono es obligatorio.');
+            }
+            return $this;
+        }
+        if (!preg_match('/^\d{8}$/', $v)) {
+            $this->fallo($campo, 'El teléfono debe tener exactamente 8 dígitos, sin el prefijo +591. Ejemplo: 71234567.');
+        }
+        return $this;
+    }
+
+    /** Fecha de nacimiento real, pasada y con mayoría de edad. */
+    public function fechaNacimiento(string $campo = 'fecha_nacimiento', bool $obligatoria = true, int $edadMinima = 18): self
+    {
+        $v = trim((string)($_POST[$campo] ?? ''));
+        if ($v === '') {
+            if ($obligatoria) {
+                $this->fallo($campo, 'La fecha de nacimiento es obligatoria.');
+            }
+            return $this;
+        }
+        $d = \DateTime::createFromFormat('Y-m-d', $v);
+        if (!$d || $d->format('Y-m-d') !== $v) {
+            $this->fallo($campo, 'La fecha de nacimiento no es válida.');
+            return $this;
+        }
+        $hoy = new \DateTime('today');
+        if ($d > $hoy) {
+            $this->fallo($campo, 'La fecha de nacimiento no puede ser futura.');
+            return $this;
+        }
+        if ($d->diff($hoy)->y < $edadMinima) {
+            $this->fallo($campo, "Debes tener al menos {$edadMinima} años para registrarte.");
+        }
+        return $this;
+    }
+
+    public function passwordSegura(string $campo = 'password', int $min = 8): self
+    {
+        $v = (string)($_POST[$campo] ?? '');
+        if ($v === '') {
+            $this->fallo($campo, 'La contraseña es obligatoria.');
+            return $this;
+        }
+        if (strlen($v) < $min) {
+            $this->fallo($campo, "La contraseña debe tener al menos {$min} caracteres.");
+        } elseif (!preg_match('/[A-Z]/', $v)) {
+            $this->fallo($campo, 'La contraseña debe incluir al menos una letra mayúscula.');
+        } elseif (!preg_match('/[a-z]/', $v)) {
+            $this->fallo($campo, 'La contraseña debe incluir al menos una letra minúscula.');
+        } elseif (!preg_match('/\d/', $v)) {
+            $this->fallo($campo, 'La contraseña debe incluir al menos un número.');
+        }
+        return $this;
+    }
+
+    public function coincide(string $campo, string $otroCampo, string $mensaje): self
+    {
+        if ((string)($_POST[$campo] ?? '') !== (string)($_POST[$otroCampo] ?? '')) {
+            $this->fallo($campo, $mensaje);
+        }
+        return $this;
+    }
+
+    /** Valida una lista de checkboxes contra valores permitidos. */
+    public function opcionesRequeridas(string $campo, string $etiqueta, array $permitidas, bool $obligatorio = true): self
+    {
+        $valores = array_values(array_filter((array)($_POST[$campo] ?? []), 'is_string'));
+        if ($valores === []) {
+            if ($obligatorio) {
+                $this->fallo($campo, "Selecciona al menos una opción en {$etiqueta}.");
+            }
+            return $this;
+        }
+        foreach ($valores as $v) {
+            if (!in_array($v, $permitidas, true)) {
+                $this->fallo($campo, "Valor no permitido en {$etiqueta}.");
+                return $this;
+            }
+        }
+        return $this;
+    }
+
     public function telefono(string $campo = 'telefono'): self
     {
         $v = trim((string)($_POST[$campo] ?? ''));

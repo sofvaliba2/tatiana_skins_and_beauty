@@ -101,5 +101,8 @@ C:\xampp\php\php.exe bin\crear_admin.php correo@ejemplo.com "Nombre" "Apellido"
 
 | Rol | Usuario | Contraseña | Qué puede hacer |
 |---|---|---|---|
-| Administrador | `admin.test@test.bo` | `186c9075` | Acceso y control total del sistema, gestión de empleados, sucursales, horarios, servicios, inventario, reportes e historial clínico. |
-| Cliente | `quispeliz143@gmail.com` | `12345678` | Exploración de catálogo de tratamientos/productos, reserva de citas en línea por sucursal y consulta de historial de citas. |
+| Administrador | `admin.test@test.bo` | `TatianaAdmin2026!` | Acceso y control total del sistema, gestión de empleados, sucursales, horarios, servicios, inventario, reportes e historial clínico. |
+| Cliente | `quispeliz143@gmail.com` | `TatianaCliente2026!` | Exploración de catálogo de tratamientos/productos, reserva de citas en línea por sucursal y consulta de historial de citas. |
+
+> Las contraseñas se guardan con `password_hash()` (bcrypt). Si necesitas restablecerlas
+> de nuevo, ejecuta `C:\xampp\php\php.exe bin\reset_passwords.php`.

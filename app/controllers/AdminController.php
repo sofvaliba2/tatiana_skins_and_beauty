@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Flash;
 use App\Core\Upload;
 use App\Core\Validate;
@@ -119,6 +120,31 @@ final class AdminController extends Controller
                 if (Reserva::porId($idReserva) !== null) {
                     Historial::guardarObservacion($idReserva, trim((string)($_POST['observaciones'] ?? '')));
                     Flash::ok('Observación guardada en el historial.');
+                }
+            } elseif ($accion === 'pago_confirmar') {
+                $id = $this->entero('id_reserva');
+                if (Reserva::confirmarPago($id, Auth::id())) {
+                    Flash::ok('Anticipo de la reserva #' . $id . ' confirmado. Se actualizó el saldo.');
+                } else {
+                    Flash::error('No se pudo confirmar el pago. La reserva debe tener un comprobante por verificar.');
+                }
+            } elseif ($accion === 'pago_rechazar') {
+                $id = $this->entero('id_reserva');
+                $motivo = trim((string)($_POST['motivo'] ?? ''));
+                if ($motivo === '') {
+                    $motivo = 'Comprobante rechazado por el personal.';
+                }
+                if (Reserva::rechazarPago($id, $motivo, Auth::id())) {
+                    Flash::ok('Comprobante de la reserva #' . $id . ' rechazado. El cliente puede enviar uno nuevo.');
+                } else {
+                    Flash::error('No se pudo rechazar el comprobante.');
+                }
+            } elseif ($accion === 'pago_efectivo') {
+                $id = $this->entero('id_reserva');
+                if (Reserva::registrarPagoEfectivo($id, Auth::id())) {
+                    Flash::ok('Pago en efectivo de la reserva #' . $id . ' registrado. Saldo en cero.');
+                } else {
+                    Flash::error('No se pudo registrar el pago en efectivo.');
                 }
             }
             $this->redirigir('admin_citas', array_filter([

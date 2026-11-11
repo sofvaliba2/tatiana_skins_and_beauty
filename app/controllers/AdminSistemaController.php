@@ -200,7 +200,7 @@ final class AdminSistemaController extends Controller
     public function notificaciones(): void
     {
         $this->vista('admin/notificaciones.php', [
-            'pendientes' => Reserva::pendientesDetalle(),
+            'pendientes' => Reserva::pendientesPago(),
             'stockBajo'  => Producto::stockBajo(),
             'citasHoy'   => Reserva::resumenDelDia(date('Y-m-d')),
         ]);

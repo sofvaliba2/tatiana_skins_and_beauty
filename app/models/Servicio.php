@@ -84,4 +84,47 @@ final class Servicio extends Model
     {
         return Ids::insertarConCodigo('categoria_servicio', 'id_categoriaS', 'CS', 2, ['nombre_cservicio' => $nombre]);
     }
+
+    /**
+     * Clasifica un servicio del catálogo real como facial o depilación.
+     * No crea registros: solo usa la categoría/nombre existentes.
+     */
+    public static function tipoTratamiento(array $servicio): string
+    {
+        $categoria = (string)($servicio['id_categoriaS'] ?? $servicio['categoria'] ?? '');
+        $nombre = mb_strtolower((string)($servicio['nombre'] ?? ''));
+        if ($categoria === 'CS01' || str_contains($nombre, 'depil')) {
+            return 'depilacion';
+        }
+        return 'facial';
+    }
+
+    /** Zonas de depilación admitidas por el formulario. */
+    public static function zonasDepilacion(): array
+    {
+        return [
+            'axilas'  => 'Axilas',
+            'piernas' => 'Piernas',
+            'brazos'  => 'Brazos',
+            'rostro'  => 'Rostro',
+            'bozo'    => 'Bozo',
+            'cejas'   => 'Cejas',
+            'pies'    => 'Pies',
+            'otras'   => 'Otras',
+        ];
+    }
+
+    /** Productos del catálogo existente relacionados con un servicio. */
+    public static function productosRelacionados(string $idServicio, int $limite = 6): array
+    {
+        return self::all(
+            'SELECT p.id_producto, p.nombre_producto, p.descripcion, p.precio, p.cantidad, p.imagen_url
+             FROM servicio_producto sp
+             JOIN producto p ON p.id_producto = sp.id_producto
+             WHERE sp.id_servicio = ?
+             ORDER BY sp.recomendado DESC, p.nombre_producto
+             LIMIT ' . $limite,
+            [$idServicio]
+        );
+    }
 }

@@ -38,12 +38,13 @@ $titulo = 'Ingresar';
                 <?php if (!empty($next)): ?><input type="hidden" name="next" value="<?= e($next) ?>"><?php endif; ?>
                 <div class="field">
                     <label for="correo">Correo electrónico</label>
-                    <input class="input<?= clase_campo($errores, 'correo') ?>" type="email" id="correo" name="correo" placeholder="tucorreo@gmail.com" required value="<?= e($_POST['correo'] ?? '') ?>">
+                    <input class="input<?= clase_campo($errores, 'correo') ?>" type="email" id="correo" name="correo" placeholder="tucorreo@gmail.com" required autocomplete="email" value="<?= e($_POST['correo'] ?? '') ?>">
                     <?= error_campo($errores, 'correo') ?>
                 </div>
                 <div class="field">
                     <label for="password">Contraseña</label>
-                    <input class="input" type="password" id="password" name="password" placeholder="••••••••" required>
+                    <input class="input<?= clase_campo($errores, 'password') ?>" type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+                    <?= error_campo($errores, 'password') ?>
                 </div>
                 <button class="btn btn-primary btn-block" type="submit">Ingresar</button>
             </form>

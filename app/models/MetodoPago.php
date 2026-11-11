@@ -7,7 +7,21 @@ final class MetodoPago extends Model
 {
     public static function activos(): array
     {
-        return self::all("SELECT * FROM metodo_pago WHERE estado = 'activo' OR estado IS NULL ORDER BY nombre_metodoPago");
+        // El estado histórico pudo guardarse como "Activo" o "activo".
+        return self::all("SELECT * FROM metodo_pago WHERE LOWER(COALESCE(estado, 'activo')) = 'activo' ORDER BY nombre_metodoPago");
+    }
+
+    public static function porCodigo(string $codigo): ?array
+    {
+        return self::one('SELECT * FROM metodo_pago WHERE id_metodoPago = ? LIMIT 1', [trim($codigo)]);
+    }
+
+    public static function esActivo(string $id): bool
+    {
+        return (int)self::value(
+            "SELECT COUNT(*) FROM metodo_pago WHERE id_metodoPago = ? AND LOWER(COALESCE(estado, 'activo')) = 'activo'",
+            [$id]
+        ) > 0;
     }
 
     public static function nombre(string $id): string

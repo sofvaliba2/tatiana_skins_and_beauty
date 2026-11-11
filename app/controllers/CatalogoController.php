@@ -79,18 +79,33 @@ final class CatalogoController extends Controller
         if (!$this->esPost()) {
             $this->redirigir('carrito');
         }
-        $carrito = $_SESSION['carrito'] ?? [];
-        foreach (($_POST['cantidad'] ?? []) as $id => $cant) {
-            $id = (string)$id;
-            if (!isset($carrito[$id])) {
-                continue;
-            }
-            $cant = (int)$cant;
-            $stock = (int)$carrito[$id]['stock'];
-            if ($cant <= 0) {
+        $carrito = is_array($_SESSION['carrito'] ?? null) ? $_SESSION['carrito'] : [];
+        $id = $this->texto('id_producto');
+        $delta = $this->entero('delta', 0);
+
+        if ($id !== '' && $delta !== 0 && isset($carrito[$id])) {
+            $producto = Producto::paraCarrito($id);
+            $stock = $producto !== null ? (int)$producto['stock'] : 0;
+            $nueva = (int)($carrito[$id]['cantidad'] ?? 0) + $delta;
+            if ($nueva <= 0 || $stock <= 0) {
                 unset($carrito[$id]);
             } else {
-                $carrito[$id]['cantidad'] = min($cant, $stock);
+                $carrito[$id]['cantidad'] = min($nueva, $stock);
+            }
+        } else {
+            foreach ((array)($_POST['cantidad'] ?? []) as $idItem => $cant) {
+                $idItem = (string)$idItem;
+                if (!isset($carrito[$idItem])) {
+                    continue;
+                }
+                $producto = Producto::paraCarrito($idItem);
+                $stock = $producto !== null ? (int)$producto['stock'] : 0;
+                $cant = (int)$cant;
+                if ($cant <= 0 || $stock <= 0) {
+                    unset($carrito[$idItem]);
+                } else {
+                    $carrito[$idItem]['cantidad'] = min($cant, $stock);
+                }
             }
         }
         $_SESSION['carrito'] = $carrito;
@@ -113,12 +128,57 @@ final class CatalogoController extends Controller
 
     public function carrito(): void
     {
-        $carrito = array_values($_SESSION['carrito'] ?? []);
+        $items = $this->itemsDesdeSesion();
         $metodosPago = MetodoPago::activos();
         $sucursales = Sucursal::todas();
         $errores = $_SESSION['carrito_errores'] ?? [];
         unset($_SESSION['carrito_errores']);
-        $this->vista('catalogo/carrito.php', compact('carrito', 'metodosPago', 'sucursales', 'errores'));
+        $this->vista('catalogo/carrito.php', compact('items', 'metodosPago', 'sucursales', 'errores'));
+    }
+
+    /** Reconstruye el carrito desde MySQL (precio, stock, nombre e imagen reales). */
+    private function itemsDesdeSesion(): array
+    {
+        $sesion = is_array($_SESSION['carrito'] ?? null) ? $_SESSION['carrito'] : [];
+        $items = [];
+        $reconstruido = [];
+        $cambio = false;
+
+        foreach ($sesion as $id => $dato) {
+            $producto = Producto::paraCarrito((string)$id);
+            if ($producto === null || (int)$producto['stock'] <= 0) {
+                $cambio = true;
+                continue;
+            }
+            $cantidad = max(1, (int)($dato['cantidad'] ?? 1));
+            if ($cantidad > (int)$producto['stock']) {
+                $cantidad = (int)$producto['stock'];
+                $cambio = true;
+            }
+            $precio = (float)$producto['precio'];
+            $items[] = [
+                'id'          => (string)$producto['id_producto'],
+                'nombre'      => (string)$producto['nombre_producto'],
+                'descripcion' => (string)($producto['descripcion'] ?? ''),
+                'precio'      => $precio,
+                'cantidad'    => $cantidad,
+                'stock'       => (int)$producto['stock'],
+                'imagen_url'  => (string)($producto['imagen_url'] ?? ''),
+                'subtotal'    => round($precio * $cantidad, 2),
+            ];
+            $reconstruido[(string)$producto['id_producto']] = [
+                'id'       => (string)$producto['id_producto'],
+                'nombre'   => (string)$producto['nombre_producto'],
+                'precio'   => $precio,
+                'cantidad' => $cantidad,
+                'stock'    => (int)$producto['stock'],
+            ];
+        }
+
+        if ($cambio || count($reconstruido) !== count($sesion)) {
+            $_SESSION['carrito'] = $reconstruido;
+        }
+        return $items;
     }
 
     public function checkout(): void
@@ -132,6 +192,10 @@ final class CatalogoController extends Controller
             $this->redirigir('catalogo');
         }
         $idMetodo = $this->texto('id_metodoPago');
+        if ($idMetodo !== '' && !MetodoPago::esActivo($idMetodo)) {
+            Flash::error('Selecciona un método de pago válido.');
+            $this->redirigir('carrito');
+        }
 
         foreach ($carrito as $item) {
             $stock = Producto::stock((string)$item['id']);
@@ -143,6 +207,10 @@ final class CatalogoController extends Controller
 
         try {
             $compra = Compra::crear(Auth::id(), $idMetodo !== '' ? $idMetodo : null, $carrito);
+        } catch (\RuntimeException | \DomainException $e) {
+            error_log('[CHECKOUT] ' . $e->getMessage());
+            Flash::error($e->getMessage());
+            $this->redirigir('carrito');
         } catch (\Throwable $e) {
             error_log('[CHECKOUT] ' . $e->getMessage());
             Flash::error('No se pudo procesar la compra. Intenta nuevamente.');
