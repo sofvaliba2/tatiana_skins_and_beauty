@@ -17,6 +17,16 @@ final class Auth
             return false;
         }
 
+        // Migración transparente: al iniciar sesión, un hash antiguo se
+        // reemplaza por password_hash() sin pedirle nada extra al usuario.
+        if (self::debeRehashear((string)$cuenta['password'])) {
+            try {
+                Usuario::cambiarPassword((string)$cuenta['id_usuario'], $password);
+            } catch (\Throwable $e) {
+                error_log('[AUTH-REHASH] ' . $e->getMessage());
+            }
+        }
+
         session_regenerate_id(true);
         $_SESSION['usuario'] = [
             'id'         => (string)$cuenta['id_usuario'],
@@ -88,10 +98,9 @@ final class Auth
         session_destroy();
     }
 
-    public static function hashPassword(string $password, string $correo): string
+    public static function hashPassword(string $password, string $correo = ''): string
     {
-        $sal = substr(hash('sha256', $correo . '|' . APP_KEY), 0, 16);
-        return base64_encode(hash_hmac('sha256', $password . '|' . $sal, APP_KEY, true));
+        return password_hash($password, PASSWORD_DEFAULT);
     }
 
     public static function verificarPassword(string $password, string $guardado, string $correo): bool
@@ -99,6 +108,22 @@ final class Auth
         if ($guardado === '') {
             return false;
         }
-        return hash_equals(self::hashPassword($password, $correo), $guardado);
+
+        $info = password_get_info($guardado);
+        if (($info['algoName'] ?? 'unknown') !== 'unknown') {
+            return password_verify($password, $guardado);
+        }
+
+        // Compatibilidad con hashes HMAC-SHA256 del sistema anterior.
+        $sal = substr(hash('sha256', $correo . '|' . APP_KEY), 0, 16);
+        $legacy = base64_encode(hash_hmac('sha256', $password . '|' . $sal, APP_KEY, true));
+        return hash_equals($legacy, $guardado);
+    }
+
+    private static function debeRehashear(string $guardado): bool
+    {
+        $info = password_get_info($guardado);
+        return ($info['algoName'] ?? 'unknown') === 'unknown'
+            || password_needs_rehash($guardado, PASSWORD_DEFAULT);
     }
 }

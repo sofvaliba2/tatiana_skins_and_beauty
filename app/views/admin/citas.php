@@ -40,21 +40,57 @@ $fc = $fichaCliente ?? null;
             <?= vacio('No hay citas con estos filtros.', 'calendar') ?>
         <?php else: ?>
         <table class="table">
-            <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Sucursal</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Sucursal</th><th>Total / saldo</th><th>Estado</th><th>Pago</th><th>Acciones</th></tr></thead>
             <tbody>
-            <?php foreach ($reservas as $c): $comprobante = is_file(BASE_PATH . '/public/uploads/comprobantes/res_' . $c['id_reserva'] . '.jpg'); ?>
+            <?php foreach ($reservas as $c):
+                $comp = trim((string)($c['comprobante_pago'] ?? $c['comprobante'] ?? ''));
+                $estadoPago = (string)($c['estado_pago'] ?? 'sin_pago');
+                $totalReserva = (float)($c['total'] ?? 0);
+                $pagado = (float)($c['monto_pagado'] ?? 0);
+                $saldo = array_key_exists('saldo_pendiente', $c) ? (float)$c['saldo_pendiente'] : max(0, $totalReserva - $pagado);
+            ?>
                 <tr>
-                    <td><?= e(date('d/m/Y', strtotime($c['fecha']))) ?></td>
+                    <td><?= e(date('d/m/Y', strtotime((string)$c['fecha']))) ?></td>
                     <td><b><?= e(substr((string)$c['hora'], 0, 5)) ?></b></td>
-                    <td><div class="person"><span class="avatar"><?= e(mb_substr($c['nombre'], 0, 1)) ?></span><?= e(trim($c['nombre'] . ' ' . $c['ap_paterno'])) ?></div></td>
+                    <td><div class="person"><span class="avatar"><?= e(mb_substr((string)$c['nombre'], 0, 1)) ?></span><?= e(trim($c['nombre'] . ' ' . $c['ap_paterno'])) ?></div></td>
                     <td><?= e($c['servicios'] ?? '—') ?></td>
                     <td><?= e($c['nombre_sucursal'] ?? '—') ?></td>
-                    <td><?= bs($c['total']) ?></td>
-                    <td><?= estado((string)$c['estado']) ?><?php if ($comprobante): ?> <a class="link" href="<?= BASE_URL ?>/uploads/comprobantes/res_<?= (int)$c['id_reserva'] ?>.jpg" target="_blank" title="Ver comprobante"><?= icon('eye', 14) ?></a><?php endif; ?></td>
-                    <td><div class="acts">
+                    <td><?= bs($totalReserva) ?><br><small class="muted">Pagado <?= bs($pagado) ?> · Saldo <?= bs($saldo) ?></small></td>
+                    <td><?= estado((string)$c['estado']) ?></td>
+                    <td>
+                        <?= estado_pago($estadoPago) ?>
+                        <?php if ($comp !== ''): ?>
+                            <br><a class="link" href="<?= e(url_archivo($comp)) ?>" target="_blank" title="Ver comprobante"><?= icon('eye', 14) ?> Comprobante</a>
+                        <?php endif; ?>
+                    </td>
+                    <td><div class="acts" style="flex-wrap:wrap">
                         <a class="ic-btn" href="<?= ruta('admin_citas', array_filter(['ficha' => $c['id_reserva'], 'fecha' => $fecha ?? '', 'estado' => $estado ?? '', 'sucursal' => $idSucursal ?? ''])) ?>" title="Ver ficha"><?= icon('eye', 16) ?></a>
+
+                        <?php if ($estadoPago === 'por_verificar'): ?>
+                        <form method="post" action="<?= ruta('admin_citas') ?>" style="display:inline" data-confirm="¿Confirmar el anticipo de la reserva #<?= (int)$c['id_reserva'] ?>?">
+                            <?= csrf() ?>
+                            <input type="hidden" name="accion" value="pago_confirmar">
+                            <input type="hidden" name="id_reserva" value="<?= (int)$c['id_reserva'] ?>">
+                            <button class="ic-btn" type="submit" title="Confirmar anticipo"><?= icon('check', 16) ?></button>
+                        </form>
+                        <form method="post" action="<?= ruta('admin_citas') ?>" style="display:inline-flex;gap:.25rem;align-items:center" data-confirm="¿Rechazar el comprobante de la reserva #<?= (int)$c['id_reserva'] ?>?">
+                            <?= csrf() ?>
+                            <input type="hidden" name="accion" value="pago_rechazar">
+                            <input type="hidden" name="id_reserva" value="<?= (int)$c['id_reserva'] ?>">
+                            <input class="input" type="text" name="motivo" placeholder="Motivo" style="width:110px;padding:.35rem .5rem;font-size:.75rem">
+                            <button class="ic-btn del" type="submit" title="Rechazar comprobante"><?= icon('trash', 16) ?></button>
+                        </form>
+                        <?php elseif (in_array($estadoPago, ['pendiente_efectivo', 'sin_pago', 'anticipo_confirmado', 'parcial'], true) && $saldo > 0.0001): ?>
+                        <form method="post" action="<?= ruta('admin_citas') ?>" style="display:inline" data-confirm="¿Registrar el pago en efectivo de la reserva #<?= (int)$c['id_reserva'] ?> por <?= e(bs($saldo)) ?>?">
+                            <?= csrf() ?>
+                            <input type="hidden" name="accion" value="pago_efectivo">
+                            <input type="hidden" name="id_reserva" value="<?= (int)$c['id_reserva'] ?>">
+                            <button class="ic-btn" type="submit" title="Registrar pago en efectivo"><?= icon('box', 16) ?></button>
+                        </form>
+                        <?php endif; ?>
+
                         <?php if ($c['estado'] === 'pendiente'): ?>
-                        <form method="post" action="<?= ruta('admin_citas') ?>" style="display:inline" data-confirm="¿Confirmar el pago y la cita #<?= (int)$c['id_reserva'] ?>?">
+                        <form method="post" action="<?= ruta('admin_citas') ?>" style="display:inline" data-confirm="¿Marcar la cita #<?= (int)$c['id_reserva'] ?> como confirmada?">
                             <?= csrf() ?>
                             <input type="hidden" name="accion" value="estado">
                             <input type="hidden" name="id_reserva" value="<?= (int)$c['id_reserva'] ?>">
@@ -62,7 +98,7 @@ $fc = $fichaCliente ?? null;
                             <input type="hidden" name="fecha" value="<?= e($fecha ?? '') ?>">
                             <input type="hidden" name="estado" value="<?= e($estado ?? '') ?>">
                             <input type="hidden" name="sucursal" value="<?= e($idSucursal ?? '') ?>">
-                            <button class="ic-btn" type="submit" title="Confirmar anticipo"><?= icon('check', 16) ?></button>
+                            <button class="ic-btn" type="submit" title="Marcar cita confirmada"><?= icon('check', 16) ?></button>
                         </form>
                         <?php endif; ?>
                         <?php if (in_array($c['estado'], ['confirmada', 'pendiente'], true)): ?>

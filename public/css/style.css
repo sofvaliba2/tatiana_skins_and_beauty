@@ -309,6 +309,9 @@ textarea.input { resize: vertical; min-height: 100px; }
 .st-cancelada { background: var(--danger-bg); color: var(--danger); }
 .st-vip { background: #f6dcf0; color: #a03a8a; }
 .st-regular { background: var(--lila-claro); color: var(--morado); }
+.st-sin_pago, .st-pendiente_efectivo, .st-por_verificar, .st-parcial { background: var(--warn-bg); color: var(--warn); }
+.st-anticipo_confirmado, .st-pagado { background: var(--ok-bg); color: var(--ok); }
+.st-rechazado { background: var(--danger-bg); color: var(--danger); }
 
 /* =========================================================
    PANEL ADMIN

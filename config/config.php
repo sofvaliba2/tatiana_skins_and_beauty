@@ -31,3 +31,17 @@ define('DB_PORT', env('DB_PORT', '3306'));
 define('DB_NAME', env('DB_NAME', 'tatiana_skins_and_beauty_stea'));
 define('DB_USER', env('DB_USER', 'root'));
 define('DB_PASS', env('DB_PASS', ''));
+
+// ---------------------------------------------------------------------------
+// Reservas y pagos
+// ---------------------------------------------------------------------------
+// Monto fijo del anticipo por QR/transferencia (nunca será mayor al total).
+define('ANTICIPO_MONTO', (float)env('ANTICIPO_MONTO', '30'));
+
+// Datos reales del QR bancario del centro. Si PAGO_QR_IMAGEN queda vacío,
+// el sistema NO dibuja un QR falso: muestra un aviso de configuración.
+define('PAGO_QR_IMAGEN', env('PAGO_QR_IMAGEN', ''));
+define('PAGO_QR_TITULAR', env('PAGO_QR_TITULAR', 'Tatiana Skin and Beauty'));
+define('PAGO_QR_BANCO', env('PAGO_QR_BANCO', ''));
+define('PAGO_QR_CUENTA', env('PAGO_QR_CUENTA', ''));
+define('PAGO_QR_PAYLOAD', env('PAGO_QR_PAYLOAD', ''));

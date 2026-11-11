@@ -63,7 +63,11 @@ final class Producto extends Model
 
     public static function paraCarrito(string $id): ?array
     {
-        return self::one('SELECT id_producto, nombre_producto, precio, cantidad AS stock FROM producto WHERE id_producto = ?', [$id]);
+        return self::one(
+            'SELECT id_producto, nombre_producto, descripcion, precio, cantidad AS stock, imagen_url
+             FROM producto WHERE id_producto = ?',
+            [$id]
+        );
     }
 
     public static function stock(string $id): int
@@ -89,6 +93,15 @@ final class Producto extends Model
     public static function descontarStock(string $id, int $cantidad): void
     {
         self::run('UPDATE producto SET cantidad = cantidad - ? WHERE id_producto = ?', [$cantidad, $id]);
+    }
+
+    /** Descuenta stock solo si hay unidades suficientes (evita sobreventa). */
+    public static function descontarStockSeguro(string $id, int $cantidad): bool
+    {
+        return self::run(
+            'UPDATE producto SET cantidad = cantidad - ? WHERE id_producto = ? AND cantidad >= ?',
+            [$cantidad, $id, $cantidad]
+        ) > 0;
     }
 
     public static function guardar(?string $idEditar, array $datos): array

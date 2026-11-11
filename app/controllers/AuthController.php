@@ -49,35 +49,30 @@ final class AuthController extends Controller
         $errores = [];
         if ($this->esPost()) {
             $v = Validate::make()
-                ->texto('nombre', 'El nombre', 2, 50)
-                ->texto('ap_paterno', 'El apellido paterno', 2, 50)
-                ->telefono('telefono')
+                ->nombrePersona('nombre', 'El nombre', 2, 50)
+                ->nombrePersona('ap_paterno', 'El apellido paterno', 2, 50)
+                ->nombrePersona('ap_materno', 'El apellido materno', 2, 50, false)
+                ->telefonoBolivia('telefono')
                 ->correo('correo')
-                ->fecha('fecha_nacimiento', 'de nacimiento')
+                ->fechaNacimiento('fecha_nacimiento', true, 18)
+                ->passwordSegura('password')
+                ->coincide('password2', 'password', 'Las contraseñas no coinciden.')
                 ->unico('cuenta_usuario', 'correo', 'correo', 'correo electrónico');
 
-            if (empty($_POST['telefono']) || trim((string)$_POST['telefono']) === '') {
-                $v->fallo('telefono', 'El teléfono es obligatorio.');
-            }
             $pass = (string)($_POST['password'] ?? '');
-            $pass2 = (string)($_POST['password2'] ?? '');
-            if (strlen($pass) < 8) {
-                $v->fallo('password', 'La contraseña debe tener al menos 8 caracteres.');
-            } elseif ($pass !== $pass2) {
-                $v->fallo('password2', 'Las contraseñas no coinciden.');
-            }
 
             if ($v->fallido()) {
                 $errores = $v->errores();
             } else {
                 try {
                     $correo = mb_strtolower(trim((string)$_POST['correo']));
+                    $limpiar = static fn (string $c): string => preg_replace('/\s+/u', ' ', trim((string)($_POST[$c] ?? ''))) ?? '';
                     Usuario::crearCliente([
-                        'nombre'           => trim((string)$_POST['nombre']),
-                        'ap_paterno'       => trim((string)$_POST['ap_paterno']),
-                        'ap_materno'       => trim((string)($_POST['ap_materno'] ?? '')),
-                        'telefono'         => trim((string)$_POST['telefono']),
-                        'fecha_nacimiento' => ($_POST['fecha_nacimiento'] ?? '') !== '' ? $_POST['fecha_nacimiento'] : null,
+                        'nombre'           => $limpiar('nombre'),
+                        'ap_paterno'       => $limpiar('ap_paterno'),
+                        'ap_materno'       => $limpiar('ap_materno'),
+                        'telefono'         => Validate::normalizarTelefono((string)$_POST['telefono']),
+                        'fecha_nacimiento' => (string)$_POST['fecha_nacimiento'],
                     ], $correo, $pass);
                 } catch (\Throwable $e) {
                     error_log('[REGISTRO] ' . $e->getMessage());

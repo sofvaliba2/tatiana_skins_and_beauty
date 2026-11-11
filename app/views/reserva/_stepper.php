@@ -1,6 +1,6 @@
 <?php
-/** Indicador de pasos de la reserva. Requiere $paso (1-4). */
-$pasos_reserva = ['Servicio y horario', 'Pago del anticipo', 'Tu piel', 'Recibo'];
+/** Indicador de pasos de la reserva. Requiere $paso (1-3). */
+$pasos_reserva = ['Servicio y horario', 'Pago del anticipo', 'Recibo'];
 ?>
 <div class="stepper">
     <?php foreach ($pasos_reserva as $i => $nombre): $n = $i + 1;
