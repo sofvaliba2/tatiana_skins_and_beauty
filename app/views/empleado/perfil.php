@@ -10,6 +10,7 @@ $nombreSucursal = (string)($sucursal_actual['nombre_sucursal'] ?? 'Sin sucursal 
         <h1>Mi perfil</h1>
         <p class="muted">Datos personales, sucursal de trabajo y contraseña de acceso al panel.</p>
     </div>
+    <?= btn_volver('empleado_dashboard', [], 'Inicio') ?>
 </div>
 
 <?php if (empty($sucursal_actual)): ?>

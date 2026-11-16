@@ -351,9 +351,15 @@ final class EmpleadoController extends Controller
                     'id_servicio' => (string)$servicio['id_servicio'],
                     'precio'      => (float)$servicio['precio'],
                 ],
-                $notas,
-                'confirmada'
+                [
+                    'tipo_tratamiento' => Servicio::tipoTratamiento($servicio),
+                    'respuestas'       => $notas !== '' ? ['observaciones' => $notas] : [],
+                    'estado'           => 'confirmada',
+                ]
             );
+            if ($notas !== '') {
+                Historial::registrarNota($idReserva, 'Notas de reserva: ' . $notas);
+            }
             Flash::ok('Cita #' . $idReserva . ' registrada para el ' . date('d/m/Y', strtotime($fecha)) . ' a las ' . substr($hora, 0, 5) . '.');
         } catch (\Throwable $e) {
             error_log('[EMPLEADO-CITAS] ' . $e->getMessage());

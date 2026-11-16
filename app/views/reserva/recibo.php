@@ -37,6 +37,20 @@ if ($zonaTratamiento === 'otras' && !empty($respuestas['zona_otra'])) {
 } elseif (isset($zonas[$zonaTratamiento])) {
     $zonaTratamiento = $zonas[$zonaTratamiento];
 }
+
+// Verificación de integridad: cantidad × precio = subtotal y suma = total.
+$sumaSubtotales = 0.0;
+$itemsConError = 0;
+foreach ($items as $item) {
+    $cant = (int)($item['cantidad'] ?? 1);
+    $unit = (float)($item['precio_unitario'] ?? 0);
+    $sub  = (float)($item['subtotal'] ?? 0);
+    $sumaSubtotales += $sub;
+    if ($cant <= 0 || $unit < 0 || abs(round($unit * $cant, 2) - $sub) >= 0.01) {
+        $itemsConError++;
+    }
+}
+$cuadra = $itemsConError === 0 && abs(round($sumaSubtotales, 2) - (float)($resumen['total'] ?? 0)) < 0.01;
 ?>
 <div class="page-head">
     <div class="container">
@@ -91,6 +105,17 @@ if ($zonaTratamiento === 'otras' && !empty($respuestas['zona_otra'])) {
                     <?= icon('shield', 20) ?>
                     <span><?= e($notaPago) ?></span>
                 </div>
+
+                <?php if (!$cuadra): ?>
+                    <div class="alert warn" style="margin-top:1rem">
+                        <?= icon('shield', 18) ?>
+                        <span>Detectamos diferencias entre los servicios y el total registrado. El personal revisará tu reserva.</span>
+                    </div>
+                <?php elseif (!empty($items)): ?>
+                    <p class="muted" style="font-size:.82rem;margin-top:1rem;display:flex;align-items:center;gap:.4rem;justify-content:center">
+                        <?= icon('check', 14) ?> Reserva verificada: servicios, precios y total coinciden con el registro del sistema.
+                    </p>
+                <?php endif; ?>
 
                 <?php if (!empty($reserva['codigo_pago'])): ?>
                     <p class="hint muted" style="text-align:center;font-size:.8rem">Código de pago: <?= e($reserva['codigo_pago']) ?></p>

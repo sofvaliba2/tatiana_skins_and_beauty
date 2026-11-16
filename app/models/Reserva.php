@@ -425,9 +425,6 @@ final class Reserva extends Model
         );
     }
 
-<<<<<<< HEAD
-    public static function filtrar(string $fecha, string $estado, string $idSucursal, int $limite = 100, string $idCliente = ''): array
-=======
     /** Pagos con comprobante enviado que el personal todavía debe verificar. */
     public static function pendientesPago(): array
     {
@@ -455,8 +452,11 @@ final class Reserva extends Model
         );
     }
 
-    public static function filtrar(string $fecha, string $estado, string $idSucursal, int $limite = 100): array
->>>>>>> origin/main
+    /**
+     * Filtros combinables de la agenda: día exacto, mes y año (sobre la fecha
+     * real guardada en MySQL), estado y sucursal.
+     */
+    public static function filtrar(string $fecha, string $estado, string $idSucursal, int $limite = 100, string $idCliente = '', string $mes = '', string $anio = ''): array
     {
         $sql = 'SELECT r.*, u.nombre, u.ap_paterno, u.ap_materno, u.telefono, s.nombre_sucursal, m.nombre_metodoPago,
                        GROUP_CONCAT(sv.nombre SEPARATOR ", ") AS servicios,
@@ -479,6 +479,14 @@ final class Reserva extends Model
             $sql .= ' AND r.fecha = ?';
             $params[] = $fecha;
         }
+        if ($anio !== '') {
+            $sql .= ' AND YEAR(r.fecha) = ?';
+            $params[] = (int)$anio;
+        }
+        if ($mes !== '') {
+            $sql .= ' AND MONTH(r.fecha) = ?';
+            $params[] = (int)$mes;
+        }
         if ($estado !== '') {
             $sql .= ' AND r.estado = ?';
             $params[] = $estado;
@@ -495,53 +503,33 @@ final class Reserva extends Model
         return self::all($sql, $params);
     }
 
+    /** Años con citas registradas (para el filtro de año). */
+    public static function anios(): array
+    {
+        return array_map('intval', array_column(
+            self::all('SELECT DISTINCT YEAR(fecha) AS anio FROM reserva WHERE fecha IS NOT NULL ORDER BY anio DESC'),
+            'anio'
+        ));
+    }
+
     /** Reserva con datos del cliente, sucursal y método de pago. */
     public static function conCliente(int $idReserva): ?array
     {
         return self::one(
-<<<<<<< HEAD
-            'SELECT r.*, u.nombre, u.ap_paterno, u.ap_materno, u.telefono, u.fecha_nacimiento, c.correo
-             FROM reserva r
-             JOIN usuario u ON u.id_usuario = r.id_usuario
-             LEFT JOIN cuenta_usuario c ON c.id_usuario = u.id_usuario
-=======
-            'SELECT r.*, u.nombre, u.ap_paterno, u.ap_materno, u.telefono, u.fecha_nacimiento,
+            'SELECT r.*, u.nombre, u.ap_paterno, u.ap_materno, u.telefono, u.fecha_nacimiento, c.correo,
                     s.nombre_sucursal, m.nombre_metodoPago,
                     COALESCE(NULLIF(r.precio_total, 0),
                         (SELECT COALESCE(SUM(dr.subtotal),0) FROM detalle_reserva dr WHERE dr.id_reserva = r.id_reserva)) AS total
              FROM reserva r
              JOIN usuario u ON u.id_usuario = r.id_usuario
+             LEFT JOIN cuenta_usuario c ON c.id_usuario = u.id_usuario
              LEFT JOIN sucursal s ON s.id_sucursal = r.id_sucursal
              LEFT JOIN metodo_pago m ON m.id_metodoPago = r.id_metodoPago
->>>>>>> origin/main
              WHERE r.id_reserva = ?',
             [$idReserva]
         );
     }
 
-<<<<<<< HEAD
-    public static function crear(string $idUsuario, string $idSucursal, string $fecha, string $hora, array $servicio, string $notas = '', string $estado = 'pendiente'): int
-    {
-        $estado = in_array($estado, self::ESTADOS, true) ? $estado : 'pendiente';
-        return (int)self::transaccion(function () use ($idUsuario, $idSucursal, $fecha, $hora, $servicio, $notas, $estado) {
-            $idReserva = Ids::insertarConEntero('reserva', 'id_reserva', [
-                'fecha'         => $fecha,
-                'hora'          => $hora . ':00',
-                'estado'        => $estado,
-                'id_sucursal'   => $idSucursal,
-                'id_metodoPago' => null,
-                'id_usuario'    => $idUsuario,
-            ]);
-            Ids::insertarConEntero('detalle_reserva', 'id_detalle', [
-                'cantidad'        => 1,
-                'precio_unitario' => $servicio['precio'],
-                'subtotal'        => $servicio['precio'],
-                'id_servicio'     => $servicio['id_servicio'],
-                'id_reserva'      => $idReserva,
-            ]);
-            if ($notas !== '') {
-                Historial::registrarNota($idReserva, 'Notas de reserva: ' . $notas);
-=======
     /**
      * Crea la reserva en una sola transacción. Bloquea el horario para evitar
      * que dos clientes reserven el mismo cupo. Los importes salen del servicio
@@ -558,6 +546,9 @@ final class Reserva extends Model
         $zona = $opciones['zona_tratamiento'] ?? null;
         $respuestas = $opciones['respuestas'] ?? [];
         $idMetodo = $opciones['id_metodoPago'] ?? null;
+        $estado = in_array((string)($opciones['estado'] ?? 'pendiente'), self::ESTADOS, true)
+            ? (string)($opciones['estado'] ?? 'pendiente')
+            : 'pendiente';
         $esEfectivo = $idMetodo === 'MP01';
         $anticipo = $esEfectivo ? 0.0 : min((float)ANTICIPO_MONTO, $total);
         $anticipo = max(0.0, round($anticipo, 2));
@@ -570,7 +561,7 @@ final class Reserva extends Model
         return (int)self::transaccion(function () use (
             $idUsuario, $idSucursal, $fecha, $horaNormalizada, $servicio,
             $tipo, $zona, $respuestas, $idMetodo, $esEfectivo, $total, $anticipo,
-            $estadoPago, $saldo, $codigo, $claveBloqueo
+            $estadoPago, $saldo, $codigo, $claveBloqueo, $estado
         ) {
             $lock = self::value('SELECT GET_LOCK(?, 10)', [$claveBloqueo]);
             if ((string)$lock !== '1') {
@@ -593,7 +584,7 @@ final class Reserva extends Model
                     'saldo_pendiente'  => $saldo,
                     'estado_pago'      => $estadoPago,
                     'codigo_pago'      => $codigo,
-                    'estado'           => 'pendiente',
+                    'estado'           => $estado,
                     'id_sucursal'      => $idSucursal,
                     'id_metodoPago'    => $idMetodo,
                     'id_usuario'       => $idUsuario,
@@ -624,7 +615,6 @@ final class Reserva extends Model
                 return $idReserva;
             } finally {
                 self::value('SELECT RELEASE_LOCK(?)', [$claveBloqueo]);
->>>>>>> origin/main
             }
         });
     }

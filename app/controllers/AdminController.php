@@ -101,6 +101,8 @@ final class AdminController extends Controller
     public function citas(): void
     {
         $fecha = $this->texto('fecha');
+        $mes = $this->texto('mes');
+        $anio = $this->texto('anio');
         $estado = $this->texto('estado');
         $idSucursal = $this->texto('sucursal');
         $ficha = $this->entero('ficha');
@@ -148,12 +150,14 @@ final class AdminController extends Controller
                 }
             }
             $this->redirigir('admin_citas', array_filter([
-                'fecha' => $fecha, 'estado' => $estado, 'sucursal' => $idSucursal, 'ficha' => $ficha ?: null,
+                'fecha' => $fecha, 'mes' => $mes, 'anio' => $anio,
+                'estado' => $estado, 'sucursal' => $idSucursal, 'ficha' => $ficha ?: null,
             ]));
         }
 
-        $reservas = Reserva::filtrar($fecha, $estado, $idSucursal);
+        $reservas = Reserva::filtrar($fecha, $estado, $idSucursal, 100, '', $mes, $anio);
         $sucursales = Sucursal::lista();
+        $anios = $this->aniosDisponibles(Reserva::anios());
 
         $fichaCliente = null;
         if ($ficha > 0) {
@@ -167,7 +171,7 @@ final class AdminController extends Controller
             }
         }
 
-        $this->vista('admin/citas.php', compact('reservas', 'sucursales', 'fecha', 'estado', 'idSucursal', 'fichaCliente'));
+        $this->vista('admin/citas.php', compact('reservas', 'sucursales', 'fecha', 'mes', 'anio', 'anios', 'estado', 'idSucursal', 'fichaCliente'));
     }
 
     public function inventario(): void
@@ -233,19 +237,22 @@ final class AdminController extends Controller
     public function ventas(): void
     {
         $fecha = $this->texto('fecha');
+        $mes = $this->texto('mes');
+        $anio = $this->texto('anio');
         $pagina = max(1, $this->entero('p', 1));
 
         if ($this->esPost()) {
             $this->registrarVenta();
         }
 
-        ['filas' => $ventas, 'total' => $total] = Compra::ventas($fecha, $pagina, self::POR_PAGINA);
-        $totales = Compra::totales($fecha);
+        ['filas' => $ventas, 'total' => $total] = Compra::ventas($fecha, $pagina, self::POR_PAGINA, $mes, $anio);
+        $totales = Compra::totales($fecha, $mes, $anio);
         $productos = Producto::lista();
         $clientes = Usuario::listaClientes();
         $metodos = MetodoPago::activos();
+        $anios = $this->aniosDisponibles(Compra::anios());
 
-        $this->vista('admin/ventas.php', compact('ventas', 'productos', 'clientes', 'metodos', 'fecha', 'pagina', 'total', 'totales'));
+        $this->vista('admin/ventas.php', compact('ventas', 'productos', 'clientes', 'metodos', 'fecha', 'mes', 'anio', 'anios', 'pagina', 'total', 'totales'));
     }
 
     private function registrarVenta(): void
@@ -329,6 +336,15 @@ final class AdminController extends Controller
             Flash::error('No se pudo guardar el servicio.');
         }
         $this->redirigir('admin_servicios', ['q' => $this->texto('q')]);
+    }
+
+    /** Años para el selector de filtro (incluye siempre el año actual). */
+    private function aniosDisponibles(array $anios): array
+    {
+        $lista = array_merge([(int)date('Y')], array_map('intval', $anios));
+        $lista = array_values(array_unique(array_filter($lista, static fn ($a) => $a > 0)));
+        rsort($lista);
+        return $lista;
     }
 
     private function guardarCategoriaServicio(): void

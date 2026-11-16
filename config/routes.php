@@ -9,12 +9,14 @@ use App\Controllers\ClienteController;
 use App\Controllers\EmpleadoController;
 use App\Controllers\ErroresController;
 use App\Controllers\HomeController;
+use App\Controllers\PromocionController;
 use App\Controllers\ReservaController;
 
 return [
     // Sitio público
     'home'                 => [HomeController::class, 'index', 'publico'],
     'servicios'            => [HomeController::class, 'servicios', 'publico'],
+    'promociones'          => [PromocionController::class, 'index', 'publico'],
     'ayuda'                => [HomeController::class, 'ayuda', 'publico'],
 
     // Catálogo y carrito
@@ -54,6 +56,7 @@ return [
     'admin_inventario'     => [AdminController::class, 'inventario', 'admin'],
     'admin_ventas'         => [AdminController::class, 'ventas', 'admin'],
     'admin_servicios'      => [AdminController::class, 'servicios', 'admin'],
+    'admin_promociones'    => [PromocionController::class, 'admin', 'admin'],
     'admin_sucursales'     => [AdminSistemaController::class, 'sucursales', 'admin'],
     'admin_usuarios'       => [AdminSistemaController::class, 'usuarios', 'admin'],
     'admin_reportes'       => [AdminSistemaController::class, 'reportes', 'admin'],

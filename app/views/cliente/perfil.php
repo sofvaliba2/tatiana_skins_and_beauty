@@ -6,6 +6,7 @@ require __DIR__ . '/../layout/header.php';
 ?>
 <section class="section">
     <div class="container" style="max-width:640px">
+        <p style="margin-bottom:1rem"><?= enlace_volver('panel', [], 'Volver a mi panel') ?></p>
         <h1 style="font-size:1.8rem;margin-bottom:1.5rem">Mi perfil</h1>
 
         <div class="card" style="padding:2rem;margin-bottom:1.5rem">

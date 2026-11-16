@@ -16,6 +16,7 @@ $reservas = $reservas ?? [];
 
 <section class="section" style="padding-top:2.5rem">
     <div class="container" style="max-width:920px">
+        <p style="margin-bottom:1rem"><?= enlace_volver('panel', [], 'Volver a mi panel') ?></p>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.4rem;flex-wrap:wrap;gap:1rem">
             <h2 style="font-size:1.8rem">Próximas y pasadas</h2>
             <a class="btn btn-primary btn-sm" href="<?= ruta('reserva_nueva') ?>"><?= icon('plus', 16) ?> Nueva reserva</a>

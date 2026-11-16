@@ -6,6 +6,7 @@ require __DIR__ . '/../layout/header.php';
 ?>
 <section class="section">
     <div class="container">
+        <p style="margin-bottom:1rem"><?= enlace_volver('panel', [], 'Volver a mi panel') ?></p>
         <div class="section-head" style="text-align:left">
             <span class="eyebrow">Historial de compras</span>
             <h2>Mis compras</h2>

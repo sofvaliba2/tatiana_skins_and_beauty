@@ -57,7 +57,7 @@ $sucursalNombre = (string)($sucursal_actual['nombre_sucursal'] ?? 'tu sucursal')
     </section>
 
     <aside class="panel">
-        <div class="panel-head"><h3>Ficha de piel</h3></div>
+        <div class="panel-head"><h3>Ficha de piel</h3><?php if ($ficha !== null): ?><?= enlace_volver('empleado_historial', array_filter(['q' => $q ?? '']), 'Volver al listado') ?><?php endif; ?></div>
         <?php if ($ficha === null): ?>
             <?= vacio('Selecciona una clienta para consultar y registrar su historial.', 'file') ?>
         <?php else: ?>

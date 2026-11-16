@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Flash;
 use App\Core\Validate;
+use App\Models\Compra;
 use App\Models\MetodoPago;
 use App\Models\Producto;
 use App\Models\Reporte;
@@ -157,6 +158,33 @@ final class AdminSistemaController extends Controller
     {
         $desde = $this->texto('desde', date('Y-m-01'));
         $hasta = $this->texto('hasta', date('Y-m-d'));
+        $mes = $this->texto('mes');
+        $anio = $this->texto('anio');
+
+        // Atajos combinables de mes/año: si se elige un año (y mes) se calcula
+        // el rango real sobre las fechas guardadas en la base de datos.
+        if (ctype_digit($anio) && (int)$anio > 0) {
+            if (ctype_digit($mes) && (int)$mes >= 1 && (int)$mes <= 12) {
+                $desde = sprintf('%04d-%02d-01', (int)$anio, (int)$mes);
+                $hasta = date('Y-m-t', strtotime($desde));
+            } else {
+                $mes = '';
+                $desde = sprintf('%04d-01-01', (int)$anio);
+                $hasta = sprintf('%04d-12-31', (int)$anio);
+            }
+        } else {
+            $anio = '';
+            $mes = '';
+        }
+        if (!self::fechaValida($desde)) {
+            $desde = date('Y-m-01');
+        }
+        if (!self::fechaValida($hasta)) {
+            $hasta = date('Y-m-d');
+        }
+        if ($desde > $hasta) {
+            [$desde, $hasta] = [$hasta, $desde];
+        }
 
         if (($export = $this->texto('export')) !== '') {
             $this->exportarCSV($export, $desde, $hasta);
@@ -167,10 +195,29 @@ final class AdminSistemaController extends Controller
         $porProducto = Reporte::porProducto($desde, $hasta);
         $porServicio = Reporte::porServicio($desde, $hasta);
         $topClientes = Reporte::topClientes($desde, $hasta);
+        $anios = $this->aniosReportes();
 
         $this->vista('admin/reportes.php', compact(
-            'desde', 'hasta', 'resumen', 'reservas', 'porProducto', 'porServicio', 'topClientes'
+            'desde', 'hasta', 'mes', 'anio', 'anios', 'resumen', 'reservas', 'porProducto', 'porServicio', 'topClientes'
         ));
+    }
+
+    private static function fechaValida(string $fecha): bool
+    {
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) !== 1) {
+            return false;
+        }
+        $d = \DateTime::createFromFormat('Y-m-d', $fecha);
+        return $d !== false && $d->format('Y-m-d') === $fecha;
+    }
+
+    /** Años con actividad (ventas o reservas) para el filtro de reportes. */
+    private function aniosReportes(): array
+    {
+        $lista = array_merge([(int)date('Y')], Compra::anios(), Reserva::anios());
+        $lista = array_values(array_unique(array_filter(array_map('intval', $lista), static fn ($a) => $a > 0)));
+        rsort($lista);
+        return $lista;
     }
 
     private function exportarCSV(string $tipo, string $desde, string $hasta): void

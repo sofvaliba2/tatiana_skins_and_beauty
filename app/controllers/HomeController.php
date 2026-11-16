@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\Producto;
+use App\Models\Promocion;
 use App\Models\Servicio;
 use App\Models\Sucursal;
 use App\Models\Usuario;
@@ -15,12 +16,13 @@ final class HomeController extends Controller
         $servicios = Servicio::primeros(6);
         $productos = Producto::destacados(4);
         $sucursales = Sucursal::todas();
+        $promociones = Promocion::activas(3);
         $stats = [
             'clientes'   => Usuario::contarClientes(),
             'sucursales' => count($sucursales),
             'servicios'  => Servicio::total(),
         ];
-        $this->vista('home/index.php', compact('servicios', 'productos', 'sucursales', 'stats'));
+        $this->vista('home/index.php', compact('servicios', 'productos', 'sucursales', 'promociones', 'stats'));
     }
 
     public function servicios(): void

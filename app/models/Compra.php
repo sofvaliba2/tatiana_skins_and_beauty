@@ -6,7 +6,6 @@ namespace App\Models;
 final class Compra extends Model
 {
     /**
-<<<<<<< HEAD
      * Registra una venta con productos y/o servicios.
      *
      * Los precios y el stock se leen de la base de datos dentro de la misma
@@ -16,10 +15,6 @@ final class Compra extends Model
      *   ['tipo' => 'producto', 'id' => 'PROD01', 'cantidad' => 2]
      *   ['tipo' => 'servicio', 'id' => 'SERV01', 'cantidad' => 1]
      * También se mantiene el formato anterior ['id' => ..., 'precio' => ..., 'cantidad' => ...].
-=======
-     * Registra una compra. Los precios y el stock SIEMPRE se leen de MySQL:
-     * lo que llega del carrito (sesión o formulario) no puede alterar importes.
->>>>>>> origin/main
      */
     public static function crear(string $idUsuario, ?string $idMetodo, array $items): array
     {
@@ -33,9 +28,6 @@ final class Compra extends Model
         return self::transaccion(function () use ($idUsuario, $idMetodo, $items) {
             $detalle = [];
             $total = 0.0;
-<<<<<<< HEAD
-            $detalle = [];
-
             foreach ($items as $item) {
                 $tipo = strtolower(trim((string)($item['tipo'] ?? '')));
                 if ($tipo === '' && isset($item['id_servicio']) && !isset($item['id_producto'])) {
@@ -113,41 +105,6 @@ final class Compra extends Model
                 $total = round($total + $subtotal, 2);
             }
 
-=======
-
-            foreach ($items as $item) {
-                $idProducto = (string)($item['id'] ?? $item['id_producto'] ?? '');
-                $cantidad = (int)($item['cantidad'] ?? 0);
-                if ($idProducto === '' || $cantidad <= 0) {
-                    throw new \RuntimeException('El carrito contiene un producto no válido.');
-                }
-                $producto = Producto::paraCarrito($idProducto);
-                if ($producto === null) {
-                    throw new \RuntimeException('Un producto del carrito ya no existe.');
-                }
-                if ((int)$producto['stock'] < $cantidad) {
-                    throw new \RuntimeException('No hay stock suficiente de ' . $producto['nombre_producto'] . '.');
-                }
-                $precio = (float)$producto['precio'];
-                if ($precio < 0) {
-                    throw new \RuntimeException('El precio de un producto no es válido.');
-                }
-                $cantidad = min($cantidad, (int)$producto['stock']);
-                $subtotal = $precio * $cantidad;
-                $total += $subtotal;
-                $detalle[] = [
-                    'id'       => $idProducto,
-                    'cantidad' => $cantidad,
-                    'precio'   => $precio,
-                    'subtotal' => $subtotal,
-                ];
-            }
-
-            if ($detalle === []) {
-                throw new \RuntimeException('El carrito está vacío.');
-            }
-
->>>>>>> origin/main
             $nro = 'C-' . str_pad((string)((int)self::value('SELECT COALESCE(MAX(id_compra),0) FROM compra') + 1), 6, '0', STR_PAD_LEFT);
             $idCompra = Ids::insertarConEntero('compra', 'id_compra', [
                 'fecha_compra'  => date('Y-m-d'),
@@ -156,23 +113,11 @@ final class Compra extends Model
                 'id_usuario'    => $idUsuario,
                 'id_metodoPago' => $idMetodo,
             ]);
-<<<<<<< HEAD
             foreach ($detalle as $linea) {
                 Ids::insertarConEntero('detalle_compra', 'id_detalle', [
                     'cantidad'        => $linea['cantidad'],
                     'precio_unitario' => $linea['precio_unitario'],
                     'subtotal'        => $linea['subtotal'],
-=======
-            foreach ($detalle as $item) {
-                // Descuento condicional: si otra compra agotó el stock, se revierte todo.
-                if (!Producto::descontarStockSeguro($item['id'], $item['cantidad'])) {
-                    throw new \RuntimeException('El stock cambió mientras confirmabas la compra. Revisa tu carrito.');
-                }
-                Ids::insertarConEntero('detalle_compra', 'id_detalle', [
-                    'cantidad'        => $item['cantidad'],
-                    'precio_unitario' => $item['precio'],
-                    'subtotal'        => $item['subtotal'],
->>>>>>> origin/main
                     'id_compra'       => $idCompra,
                     'id_producto'     => $linea['id_producto'],
                     'id_servicio'     => $linea['id_servicio'],
@@ -271,30 +216,64 @@ final class Compra extends Model
         );
     }
 
-    public static function ventas(string $fecha, int $pagina, int $porPagina): array
+    /**
+     * Ventas con filtros combinables de día exacto, mes y año sobre la fecha
+     * real guardada en MySQL.
+     */
+    public static function ventas(string $fecha, int $pagina, int $porPagina, string $mes = '', string $anio = ''): array
     {
+        [$where, $params] = self::filtroFecha($fecha, $mes, $anio);
         $sql = 'SELECT c.*, CONCAT(u.nombre, " ", u.ap_paterno) AS cliente, m.nombre_metodoPago,
-                       (SELECT COUNT(*) FROM detalle_compra d WHERE d.id_compra = c.id_compra) AS items
+                       (SELECT COUNT(*) FROM detalle_compra d WHERE d.id_compra = c.id_compra) AS items,
+                       (SELECT p.imagen_url FROM detalle_compra d2
+                          JOIN producto p ON p.id_producto = d2.id_producto
+                         WHERE d2.id_compra = c.id_compra AND p.imagen_url IS NOT NULL AND p.imagen_url <> ""
+                         ORDER BY d2.id_detalle LIMIT 1) AS imagen_url
                 FROM compra c
                 LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
                 LEFT JOIN metodo_pago m ON m.id_metodoPago = c.id_metodoPago
-                WHERE 1';
-        $params = [];
-        if ($fecha !== '') {
-            $sql .= ' AND c.fecha_compra = ?';
-            $params[] = $fecha;
-        }
+                WHERE 1' . $where;
         $total = self::contar($sql, $params);
         $sql .= ' ORDER BY c.fecha_compra DESC, c.id_compra DESC LIMIT ' . $porPagina . ' OFFSET ' . (($pagina - 1) * $porPagina);
         return ['filas' => self::all($sql, $params), 'total' => $total];
     }
 
-    public static function totales(string $fecha = ''): array
+    public static function totales(string $fecha = '', string $mes = '', string $anio = ''): array
     {
+        [$where, $params] = self::filtroFecha($fecha, $mes, $anio);
         return self::one(
-            'SELECT COUNT(*) AS compras, COALESCE(SUM(total_pagar),0) AS monto FROM compra' . ($fecha !== '' ? ' WHERE fecha_compra = ?' : ''),
-            $fecha !== '' ? [$fecha] : []
+            'SELECT COUNT(*) AS compras, COALESCE(SUM(total_pagar),0) AS monto FROM compra WHERE 1' . $where,
+            $params
         ) ?? ['compras' => 0, 'monto' => 0];
+    }
+
+    /** Años con ventas registradas (para el filtro de año). */
+    public static function anios(): array
+    {
+        return array_map('intval', array_column(
+            self::all('SELECT DISTINCT YEAR(fecha_compra) AS anio FROM compra WHERE fecha_compra IS NOT NULL ORDER BY anio DESC'),
+            'anio'
+        ));
+    }
+
+    /** Construye el WHERE de fecha (día/mes/año) y sus parámetros. */
+    private static function filtroFecha(string $fecha, string $mes, string $anio): array
+    {
+        $where = '';
+        $params = [];
+        if ($fecha !== '') {
+            $where .= ' AND fecha_compra = ?';
+            $params[] = $fecha;
+        }
+        if ($anio !== '') {
+            $where .= ' AND YEAR(fecha_compra) = ?';
+            $params[] = (int)$anio;
+        }
+        if ($mes !== '') {
+            $where .= ' AND MONTH(fecha_compra) = ?';
+            $params[] = (int)$mes;
+        }
+        return [$where, $params];
     }
 
     public static function totalDelDia(string $fecha): float

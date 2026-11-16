@@ -3,6 +3,22 @@ $titulo = 'Compra ' . ($compra['nro_compra'] ?? '#' . $compra['id_compra']);
 $activo = 'panel';
 $carrito = count($_SESSION['carrito'] ?? []);
 $totalItems = array_sum(array_column($items, 'cantidad'));
+
+// Verificación de integridad del comprobante contra los datos de MySQL:
+// cantidad × precio unitario = subtotal  y  suma de subtotales = total.
+$sumaSubtotales = 0.0;
+$itemsConError = 0;
+foreach ($items as $i) {
+    $cant = (int)($i['cantidad'] ?? 0);
+    $unit = (float)($i['precio_unitario'] ?? 0);
+    $sub  = (float)($i['subtotal'] ?? 0);
+    $sumaSubtotales += $sub;
+    if ($cant <= 0 || $unit < 0 || abs(round($unit * $cant, 2) - $sub) >= 0.01) {
+        $itemsConError++;
+    }
+}
+$totalCompra = (float)($compra['total_pagar'] ?? 0);
+$cuadra = $itemsConError === 0 && abs(round($sumaSubtotales, 2) - $totalCompra) < 0.01;
 $esEmpleado = \App\Core\Auth::esEmpleado();
 $esAdmin = \App\Core\Auth::esAdmin();
 $volverRuta = $esEmpleado ? ruta('empleado_ventas') : ($esAdmin ? ruta('admin_dashboard') : ruta('mis_compras'));
@@ -39,10 +55,23 @@ require __DIR__ . '/../layout/header.php';
                         $nombreItem = (string)($i['nombre'] ?? $i['nombre_producto'] ?? $i['nombre_servicio'] ?? 'Ítem');
                         $esServicio = ($i['tipo'] ?? 'producto') === 'servicio';
                         ?>
+                        <?php
+                        $imgItem = !$esServicio ? trim((string)($i['imagen_url'] ?? '')) : '';
+                        $tieneImg = $imgItem !== '' && (preg_match('#^https?://#i', $imgItem) || is_file(BASE_PATH . '/public/' . $imgItem));
+                        ?>
                         <tr>
                             <td>
-                                <?= e($nombreItem) ?>
-                                <small class="muted" style="display:block;font-size:.72rem"><?= $esServicio ? 'Servicio' : 'Producto' ?></small>
+                                <div style="display:flex;align-items:center;gap:.7rem">
+                                    <?php if ($tieneImg): ?>
+                                        <img src="<?= e(url_archivo($imgItem)) ?>" alt="<?= e($nombreItem) ?>" style="width:38px;height:38px;object-fit:cover;border-radius:8px;flex:none">
+                                    <?php else: ?>
+                                        <span style="width:38px;height:38px;border-radius:8px;background:var(--lila-claro);display:flex;align-items:center;justify-content:center;color:var(--morado);flex:none"><?= icon($esServicio ? 'sparkle' : 'box', 18) ?></span>
+                                    <?php endif; ?>
+                                    <span>
+                                        <?= e($nombreItem) ?>
+                                        <small class="muted" style="display:block;font-size:.72rem"><?= $esServicio ? 'Servicio' : 'Producto' ?></small>
+                                    </span>
+                                </div>
                             </td>
                             <td style="text-align:center"><?= (int)$i['cantidad'] ?></td>
                             <td style="text-align:right"><?= bs($i['precio_unitario']) ?></td>
@@ -57,6 +86,17 @@ require __DIR__ . '/../layout/header.php';
                         </tr>
                     </tfoot>
                 </table>
+            <?php endif; ?>
+
+            <?php if (!$cuadra): ?>
+                <div class="alert warn" style="margin-top:1.2rem">
+                    <?= icon('shield', 18) ?>
+                    <span>Este comprobante presenta diferencias entre sus ítems y el total registrado. Pide al personal verificarlo antes de usarlo como referencia.</span>
+                </div>
+            <?php elseif (!empty($items)): ?>
+                <p class="muted" style="font-size:.82rem;margin-top:1rem;display:flex;align-items:center;gap:.4rem">
+                    <?= icon('check', 14) ?> Comprobante verificado: cantidades, precios y total coinciden con el registro en el sistema.
+                </p>
             <?php endif; ?>
 
             <div style="display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap">

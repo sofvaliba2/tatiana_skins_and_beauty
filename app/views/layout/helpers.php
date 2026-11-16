@@ -99,6 +99,21 @@ function paginacion(string $vista, array $params, int $total, int $pagina, int $
     return $html;
 }
 
+/**
+ * Botón de navegación interna "Volver". Usa rutas internas del sistema
+ * (nunca history.back()) para no perder datos ni salir de la sesión.
+ */
+function btn_volver(string $vista = 'home', array $params = [], string $texto = 'Volver al inicio'): string
+{
+    return '<a class="btn btn-outline" href="' . e(ruta($vista, $params)) . '">' . icon('arrow-left', 16) . ' ' . e($texto) . '</a>';
+}
+
+/** Enlace de texto "Volver" para encabezados de páginas de detalle. */
+function enlace_volver(string $vista = 'home', array $params = [], string $texto = 'Volver al inicio'): string
+{
+    return '<a class="link" href="' . e(ruta($vista, $params)) . '">' . icon('arrow-left', 15) . ' ' . e($texto) . '</a>';
+}
+
 /** Estado vacío cuando una tabla/lista no tiene datos. */
 function vacio(string $mensaje, string $icono = 'search'): string
 {
@@ -193,6 +208,7 @@ function icon(string $n, int $s = 22): string
 {
     $p = [
         'home'     => '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
+        'arrow-left' => '<path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>',
         'users'    => '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-7 7-7s7 3 7 7"/><path d="M16 4a4 4 0 010 8"/><path d="M22 21c0-3-2-5-4-6"/>',
         'calendar' => '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
         'cart'     => '<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/>',

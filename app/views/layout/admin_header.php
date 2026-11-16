@@ -24,7 +24,7 @@ $rolTexto = ($u['id_rol'] ?? '') === 'ROL01' ? 'Administrador' : 'Personal';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= e($titulo) ?> Â· Panel Tatiana</title>
+    <title><?= e($titulo) ?> · Panel Tatiana</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Allura&family=Italiana&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
@@ -36,7 +36,7 @@ $rolTexto = ($u['id_rol'] ?? '') === 'ROL01' ? 'Administrador' : 'Personal';
         <?= logo(true) ?>
         <?= item_menu('admin_dashboard', 'home', 'Inicio', $activo) ?>
 
-        <div class="grp">GestiÃ³n</div>
+        <div class="grp">Gestión</div>
         <?= item_menu('admin_clientes', 'users', 'Clientes', $activo) ?>
         <?= item_menu('admin_citas', 'calendar', 'Citas', $activo) ?>
         <?= item_menu('admin_servicios', 'sparkle', 'Servicios', $activo) ?>
@@ -44,6 +44,7 @@ $rolTexto = ($u['id_rol'] ?? '') === 'ROL01' ? 'Administrador' : 'Personal';
         <div class="grp">Comercial</div>
         <?= item_menu('admin_ventas', 'cart', 'Ventas', $activo) ?>
         <?= item_menu('admin_inventario', 'box', 'Inventario', $activo) ?>
+        <?= item_menu('admin_promociones', 'heart', 'Promociones', $activo) ?>
 
         <div class="grp">Informes</div>
         <?= item_menu('admin_reportes', 'chart', 'Reportes', $activo) ?>
@@ -53,14 +54,14 @@ $rolTexto = ($u['id_rol'] ?? '') === 'ROL01' ? 'Administrador' : 'Personal';
         <div class="grp">Sistema</div>
         <?= item_menu('admin_usuarios', 'shield', 'Usuarios', $activo) ?>
         <?= item_menu('admin_sucursales', 'pin', 'Sucursales', $activo) ?>
-        <?= item_menu('admin_config', 'settings', 'ConfiguraciÃ³n', $activo) ?>
+        <?= item_menu('admin_config', 'settings', 'Configuración', $activo) ?>
         <?php endif; ?>
 
         <div class="grp">Cuenta</div>
         <?= item_menu('admin_perfil', 'user', 'Mi perfil', $activo) ?>
         <?= item_menu('home', 'eye', 'Ver sitio', '') ?>
 
-        <div class="quote">Cuidado Â· Confianza Â· Belleza real</div>
+        <div class="quote">Cuidado · Confianza · Belleza real</div>
     </aside>
 
     <div class="main">
@@ -84,7 +85,7 @@ $rolTexto = ($u['id_rol'] ?? '') === 'ROL01' ? 'Administrador' : 'Personal';
                 </div>
                 <form method="post" action="<?= ruta('logout') ?>">
                     <?= csrf() ?>
-                    <button class="btn btn-outline btn-sm" type="submit" title="Cerrar sesiÃ³n"><?= icon('logout', 16) ?> Salir</button>
+                    <button class="btn btn-outline btn-sm" type="submit" title="Cerrar sesión"><?= icon('logout', 16) ?> Salir</button>
                 </form>
             </div>
         </div>

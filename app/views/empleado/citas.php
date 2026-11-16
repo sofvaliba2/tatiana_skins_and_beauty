@@ -220,7 +220,7 @@ $filtros = ['fecha' => $fecha ?? '', 'estado' => $estado ?? '', 'cliente' => $id
 <section class="panel" style="margin-top:1.4rem">
     <div class="panel-head">
         <h3><?= icon('file', 18) ?> Ficha de piel · Cita #<?= (int)$rv['id_reserva'] ?></h3>
-        <span class="muted" style="font-size:.85rem"><?= e(date('d/m/Y', strtotime((string)$rv['fecha']))) ?> · <?= e(substr((string)$rv['hora'], 0, 5)) ?></span>
+        <span class="muted" style="font-size:.85rem"><?= e(date('d/m/Y', strtotime((string)$rv['fecha']))) ?> · <?= e(substr((string)$rv['hora'], 0, 5)) ?> · <?= enlace_volver('empleado_citas', array_filter($filtros), 'Volver a la agenda') ?></span>
     </div>
     <?php if ($cl === null): ?>
         <?= vacio('No se encontraron los datos de la clienta.', 'user') ?>

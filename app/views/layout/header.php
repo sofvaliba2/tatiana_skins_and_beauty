@@ -31,6 +31,7 @@ $panelStaff = ($u['id_rol'] ?? '') === 'ROL02' ? 'empleado_dashboard' : 'admin_d
         <nav class="nav-links" id="menu">
             <a href="<?= ruta('home') ?>"     class="<?= $activo === 'home' ? 'active' : '' ?>">Inicio</a>
             <a href="<?= ruta('servicios') ?>" class="<?= $activo === 'servicios' ? 'active' : '' ?>">Servicios</a>
+            <a href="<?= ruta('promociones') ?>" class="<?= $activo === 'promociones' ? 'active' : '' ?>">Promociones</a>
             <a href="<?= ruta('catalogo') ?>"  class="<?= $activo === 'catalogo' ? 'active' : '' ?>">Productos</a>
             <a href="<?= ruta('ayuda') ?>" class="<?= $activo === 'ayuda' ? 'active' : '' ?>">Ayuda</a>
             <?php if ($esCliente): ?>

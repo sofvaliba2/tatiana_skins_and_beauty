@@ -10,6 +10,7 @@ $u = \App\Core\Auth::usuario();
         <h1>Mi perfil</h1>
         <p class="muted">Datos personales y contraseña de acceso al panel.</p>
     </div>
+    <?= btn_volver('admin_dashboard', [], 'Panel') ?>
 </div>
 
 <div class="split">

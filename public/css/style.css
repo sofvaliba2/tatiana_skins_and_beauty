@@ -150,6 +150,9 @@ h3 { font-size: 1.35rem; }
 .producto-body p { font-size: .88rem; color: var(--texto-suave); min-height: 2.6em; }
 .producto-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; }
 .precio-lg { font-family: var(--f-display); font-size: 1.45rem; color: var(--morado); }
+.promo-card .producto-img { background: linear-gradient(160deg, #f6dcf0, var(--lila-claro)); }
+.promo-card .producto-foot > span { display: inline-flex; align-items: baseline; gap: .45rem; flex-wrap: wrap; }
+.promo-tag { position: absolute; top: 12px; left: 12px; background: var(--morado); color: #fff; font-size: .78rem; font-weight: 600; padding: .3rem .75rem; border-radius: 999px; letter-spacing: .04em; }
 
 /* ---------- Pasos ---------- */
 .pasos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; counter-reset: paso; }
@@ -312,6 +315,9 @@ textarea.input { resize: vertical; min-height: 100px; }
 .st-sin_pago, .st-pendiente_efectivo, .st-por_verificar, .st-parcial { background: var(--warn-bg); color: var(--warn); }
 .st-anticipo_confirmado, .st-pagado { background: var(--ok-bg); color: var(--ok); }
 .st-rechazado { background: var(--danger-bg); color: var(--danger); }
+.st-programada { background: var(--lila-claro); color: var(--morado); }
+.st-vencida { background: var(--danger-bg); color: var(--danger); }
+.st-inactiva { background: #ececec; color: #777; }
 
 /* =========================================================
    PANEL ADMIN

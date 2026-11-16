@@ -77,6 +77,53 @@ require __DIR__ . '/../layout/header.php';
     </div>
 </section>
 
+<?php if (!empty($promociones)): ?>
+<section class="section" style="padding-top:0">
+    <div class="container">
+        <div class="section-head">
+            <span class="eyebrow">Ofertas vigentes</span>
+            <h2>Promociones</h2>
+            <p>Aprovecha nuestros descuentos en tratamientos y productos seleccionados.</p>
+        </div>
+        <div class="grid-3">
+            <?php foreach ($promociones as $p):
+                $imagen = trim((string)($p['imagen_url'] ?? ''));
+                $dias = (int)($p['dias_restantes'] ?? 0);
+                $enlace = !empty($p['id_producto'])
+                    ? ruta('producto', ['id' => $p['id_producto']])
+                    : (!empty($p['id_servicio']) ? ruta('reserva_nueva', ['servicio' => $p['id_servicio']]) : ruta('promociones'));
+            ?>
+            <article class="card promo-card">
+                <div class="producto-img">
+                    <?php if ($imagen !== ''): ?>
+                        <img src="<?= e(url_archivo($imagen)) ?>" alt="<?= e($p['nombre']) ?>" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
+                    <?php else: ?>
+                        <?= icon('heart', 40) ?>
+                    <?php endif; ?>
+                    <span class="promo-tag">-<?= number_format((float)$p['descuento'], 0) ?>%</span>
+                </div>
+                <div class="producto-body">
+                    <span class="cat"><?= e($p['articulo'] ?? 'Promoción') ?></span>
+                    <h3><?= e($p['nombre']) ?></h3>
+                    <div class="producto-foot">
+                        <span>
+                            <s class="muted" style="font-size:.85rem"><?= bs($p['precio_original']) ?></s>
+                            <span class="precio-lg"><?= bs($p['precio_promocional']) ?></span>
+                        </span>
+                        <a class="btn btn-primary btn-sm" href="<?= e($enlace) ?>">Ver</a>
+                    </div>
+                    <small class="muted" style="display:block;margin-top:.6rem"><?= icon('clock', 13) ?> Hasta <?= e(date('d/m/Y', strtotime((string)$p['fecha_fin']))) ?><?= $dias <= 7 ? ' · ¡Últimos ' . $dias . ' día(s)!' : '' ?></small>
+                </div>
+            </article>
+            <?php endforeach; ?>
+        </div>
+        <div style="text-align:center;margin-top:1.8rem">
+            <a class="btn btn-outline" href="<?= ruta('promociones') ?>">Ver todas las promociones</a>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
 <section class="valores section">
     <div class="container">
         <div class="section-head">

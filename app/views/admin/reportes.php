@@ -2,6 +2,11 @@
 $titulo = 'Reportes';
 $activo = 'admin_reportes';
 require __DIR__ . '/../layout/admin_header.php';
+$mes = $mes ?? '';
+$anio = $anio ?? '';
+$anios = $anios ?? [(int)date('Y')];
+$meses = ['1' => 'Enero', '2' => 'Febrero', '3' => 'Marzo', '4' => 'Abril', '5' => 'Mayo', '6' => 'Junio', '7' => 'Julio', '8' => 'Agosto', '9' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'];
+$hayFiltros = $mes !== '' || $anio !== '';
 ?>
 
 <div class="page-title">
@@ -15,7 +20,26 @@ require __DIR__ . '/../layout/admin_header.php';
     <input type="hidden" name="v" value="admin_reportes">
     <div class="field" style="margin:0"><label>Desde</label><input class="input" type="date" name="desde" value="<?= e($desde) ?>"></div>
     <div class="field" style="margin:0"><label>Hasta</label><input class="input" type="date" name="hasta" value="<?= e($hasta) ?>"></div>
+    <div class="field" style="margin:0"><label>Mes</label>
+        <select class="input" name="mes">
+            <option value="">Todos los meses</option>
+            <?php foreach ($meses as $num => $nombre): ?>
+                <option value="<?= $num ?>" <?= $mes === (string)$num ? 'selected' : '' ?>><?= e($nombre) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="field" style="margin:0"><label>Año</label>
+        <select class="input" name="anio">
+            <option value="">Todos los años</option>
+            <?php foreach ($anios as $a): ?>
+                <option value="<?= (int)$a ?>" <?= $anio === (string)$a ? 'selected' : '' ?>><?= (int)$a ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
     <button class="btn btn-primary" type="submit"><?= icon('filter', 16) ?> Aplicar</button>
+    <?php if ($hayFiltros): ?>
+        <a class="btn btn-outline" href="<?= ruta('admin_reportes', ['desde' => $desde, 'hasta' => $hasta]) ?>"><?= icon('trash', 14) ?> Limpiar</a>
+    <?php endif; ?>
     <span style="flex:1"></span>
     <a class="btn btn-outline" href="<?= ruta('admin_reportes', ['desde' => $desde, 'hasta' => $hasta, 'export' => 'compras']) ?>"><?= icon('download', 16) ?> CSV compras</a>
     <a class="btn btn-outline" href="<?= ruta('admin_reportes', ['desde' => $desde, 'hasta' => $hasta, 'export' => 'productos']) ?>"><?= icon('download', 16) ?> CSV productos</a>

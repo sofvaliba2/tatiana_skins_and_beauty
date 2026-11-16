@@ -2,6 +2,11 @@
 $titulo = 'Ventas';
 $activo = 'admin_ventas';
 require __DIR__ . '/../layout/admin_header.php';
+$mes = $mes ?? '';
+$anio = $anio ?? '';
+$anios = $anios ?? [(int)date('Y')];
+$meses = ['1' => 'Enero', '2' => 'Febrero', '3' => 'Marzo', '4' => 'Abril', '5' => 'Mayo', '6' => 'Junio', '7' => 'Julio', '8' => 'Agosto', '9' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'];
+$hayFiltros = ($fecha ?? '') !== '' || $mes !== '' || $anio !== '';
 ?>
 
 <div class="page-title">
@@ -22,9 +27,21 @@ require __DIR__ . '/../layout/admin_header.php';
 <section class="panel">
     <form class="filters" method="get" action="<?= BASE_URL ?>/index.php">
         <input type="hidden" name="v" value="admin_ventas">
-        <input class="input" type="date" name="fecha" value="<?= e($fecha ?? '') ?>">
-        <button class="btn btn-outline" type="submit">Filtrar por fecha</button>
-        <?php if (($fecha ?? '') !== ''): ?><a class="btn btn-outline" href="<?= ruta('admin_ventas') ?>">Todas</a><?php endif; ?>
+        <input class="input" type="date" name="fecha" value="<?= e($fecha ?? '') ?>" title="Día exacto">
+        <select class="input" name="mes">
+            <option value="">Todos los meses</option>
+            <?php foreach ($meses as $num => $nombre): ?>
+                <option value="<?= $num ?>" <?= $mes === (string)$num ? 'selected' : '' ?>><?= e($nombre) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <select class="input" name="anio">
+            <option value="">Todos los años</option>
+            <?php foreach ($anios as $a): ?>
+                <option value="<?= (int)$a ?>" <?= $anio === (string)$a ? 'selected' : '' ?>><?= (int)$a ?></option>
+            <?php endforeach; ?>
+        </select>
+        <button class="btn btn-outline" type="submit"><?= icon('filter', 16) ?> Filtrar</button>
+        <?php if ($hayFiltros): ?><a class="btn btn-outline" href="<?= ruta('admin_ventas') ?>"><?= icon('trash', 14) ?> Limpiar</a><?php endif; ?>
     </form>
 
     <?php if (empty($ventas)): ?>
@@ -34,8 +51,18 @@ require __DIR__ . '/../layout/admin_header.php';
         <thead><tr><th>N° compra</th><th>Fecha</th><th>Cliente</th><th>Método</th><th>Ítems</th><th>Total</th><th>Acciones</th></tr></thead>
         <tbody>
         <?php foreach ($ventas as $v): ?>
+            <?php $imgVenta = trim((string)($v['imagen_url'] ?? '')); $tieneImgVenta = $imgVenta !== '' && (preg_match('#^https?://#i', $imgVenta) || is_file(BASE_PATH . '/public/' . $imgVenta)); ?>
             <tr>
-                <td><b><?= e($v['nro_compra'] ?? '#' . $v['id_compra']) ?></b></td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:.6rem">
+                        <?php if ($tieneImgVenta): ?>
+                            <img src="<?= e(url_archivo($imgVenta)) ?>" alt="" style="width:34px;height:34px;object-fit:cover;border-radius:7px;flex:none">
+                        <?php else: ?>
+                            <span style="width:34px;height:34px;border-radius:7px;background:var(--lila-claro);display:flex;align-items:center;justify-content:center;color:var(--morado);flex:none"><?= icon('cart', 16) ?></span>
+                        <?php endif; ?>
+                        <b><?= e($v['nro_compra'] ?? '#' . $v['id_compra']) ?></b>
+                    </div>
+                </td>
                 <td><?= e(date('d/m/Y', strtotime($v['fecha_compra']))) ?></td>
                 <td><div class="person"><span class="avatar"><?= e(mb_substr($v['cliente'] ?? '?', 0, 1)) ?></span><?= e($v['cliente'] ?? 'Cliente eliminado') ?></div></td>
                 <td><?= e($v['nombre_metodoPago'] ?? 'Por definir') ?></td>
@@ -46,7 +73,7 @@ require __DIR__ . '/../layout/admin_header.php';
         <?php endforeach; ?>
         </tbody>
     </table>
-    <?= paginacion('admin_ventas', ['fecha' => $fecha ?? ''], $total, $pagina, 10) ?>
+    <?= paginacion('admin_ventas', ['fecha' => $fecha ?? '', 'mes' => $mes, 'anio' => $anio], $total, $pagina, 10) ?>
     <?php endif; ?>
 </section>
 

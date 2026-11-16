@@ -3,6 +3,11 @@ $titulo = 'Citas';
 $activo = 'admin_citas';
 require __DIR__ . '/../layout/admin_header.php';
 $fc = $fichaCliente ?? null;
+$mes = $mes ?? '';
+$anio = $anio ?? '';
+$anios = $anios ?? [(int)date('Y')];
+$meses = ['1' => 'Enero', '2' => 'Febrero', '3' => 'Marzo', '4' => 'Abril', '5' => 'Mayo', '6' => 'Junio', '7' => 'Julio', '8' => 'Agosto', '9' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'];
+$hayFiltros = ($fecha ?? '') !== '' || $mes !== '' || $anio !== '' || ($estado ?? '') !== '' || ($idSucursal ?? '') !== '';
 ?>
 
 <div class="page-title">
@@ -17,7 +22,19 @@ $fc = $fichaCliente ?? null;
     <section class="panel">
         <form class="filters" method="get" action="<?= BASE_URL ?>/index.php">
             <input type="hidden" name="v" value="admin_citas">
-            <input class="input" type="date" name="fecha" value="<?= e($fecha ?? '') ?>">
+            <input class="input" type="date" name="fecha" value="<?= e($fecha ?? '') ?>" title="Día exacto">
+            <select class="input" name="mes">
+                <option value="">Todos los meses</option>
+                <?php foreach ($meses as $num => $nombre): ?>
+                    <option value="<?= $num ?>" <?= $mes === (string)$num ? 'selected' : '' ?>><?= e($nombre) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select class="input" name="anio">
+                <option value="">Todos los años</option>
+                <?php foreach ($anios as $a): ?>
+                    <option value="<?= (int)$a ?>" <?= $anio === (string)$a ? 'selected' : '' ?>><?= (int)$a ?></option>
+                <?php endforeach; ?>
+            </select>
             <select class="input" name="estado">
                 <option value="">Todos los estados</option>
                 <?php foreach (['pendiente', 'confirmada', 'atendida', 'cancelada'] as $est): ?>
@@ -31,8 +48,8 @@ $fc = $fichaCliente ?? null;
                 <?php endforeach; ?>
             </select>
             <button class="btn btn-outline" type="submit"><?= icon('filter', 16) ?> Filtrar</button>
-            <?php if (($fecha ?? '') !== '' || ($estado ?? '') !== '' || ($idSucursal ?? '') !== ''): ?>
-                <a class="btn btn-outline" href="<?= ruta('admin_citas') ?>">Limpiar</a>
+            <?php if ($hayFiltros): ?>
+                <a class="btn btn-outline" href="<?= ruta('admin_citas') ?>"><?= icon('trash', 14) ?> Limpiar</a>
             <?php endif; ?>
         </form>
 
@@ -64,7 +81,7 @@ $fc = $fichaCliente ?? null;
                         <?php endif; ?>
                     </td>
                     <td><div class="acts" style="flex-wrap:wrap">
-                        <a class="ic-btn" href="<?= ruta('admin_citas', array_filter(['ficha' => $c['id_reserva'], 'fecha' => $fecha ?? '', 'estado' => $estado ?? '', 'sucursal' => $idSucursal ?? ''])) ?>" title="Ver ficha"><?= icon('eye', 16) ?></a>
+                        <a class="ic-btn" href="<?= ruta('admin_citas', array_filter(['ficha' => $c['id_reserva'], 'fecha' => $fecha ?? '', 'mes' => $mes, 'anio' => $anio, 'estado' => $estado ?? '', 'sucursal' => $idSucursal ?? ''])) ?>" title="Ver ficha"><?= icon('eye', 16) ?></a>
 
                         <?php if ($estadoPago === 'por_verificar'): ?>
                         <form method="post" action="<?= ruta('admin_citas') ?>" style="display:inline" data-confirm="¿Confirmar el anticipo de la reserva #<?= (int)$c['id_reserva'] ?>?">
@@ -96,6 +113,8 @@ $fc = $fichaCliente ?? null;
                             <input type="hidden" name="id_reserva" value="<?= (int)$c['id_reserva'] ?>">
                             <input type="hidden" name="nuevo_estado" value="confirmada">
                             <input type="hidden" name="fecha" value="<?= e($fecha ?? '') ?>">
+                            <input type="hidden" name="mes" value="<?= e($mes) ?>">
+                            <input type="hidden" name="anio" value="<?= e($anio) ?>">
                             <input type="hidden" name="estado" value="<?= e($estado ?? '') ?>">
                             <input type="hidden" name="sucursal" value="<?= e($idSucursal ?? '') ?>">
                             <button class="ic-btn" type="submit" title="Marcar cita confirmada"><?= icon('check', 16) ?></button>
@@ -108,6 +127,8 @@ $fc = $fichaCliente ?? null;
                             <input type="hidden" name="id_reserva" value="<?= (int)$c['id_reserva'] ?>">
                             <input type="hidden" name="nuevo_estado" value="atendida">
                             <input type="hidden" name="fecha" value="<?= e($fecha ?? '') ?>">
+                            <input type="hidden" name="mes" value="<?= e($mes) ?>">
+                            <input type="hidden" name="anio" value="<?= e($anio) ?>">
                             <input type="hidden" name="estado" value="<?= e($estado ?? '') ?>">
                             <input type="hidden" name="sucursal" value="<?= e($idSucursal ?? '') ?>">
                             <button class="ic-btn" type="submit" title="Marcar atendida"><?= icon('clock', 16) ?></button>
@@ -118,6 +139,8 @@ $fc = $fichaCliente ?? null;
                             <input type="hidden" name="id_reserva" value="<?= (int)$c['id_reserva'] ?>">
                             <input type="hidden" name="nuevo_estado" value="cancelada">
                             <input type="hidden" name="fecha" value="<?= e($fecha ?? '') ?>">
+                            <input type="hidden" name="mes" value="<?= e($mes) ?>">
+                            <input type="hidden" name="anio" value="<?= e($anio) ?>">
                             <input type="hidden" name="estado" value="<?= e($estado ?? '') ?>">
                             <input type="hidden" name="sucursal" value="<?= e($idSucursal ?? '') ?>">
                             <button class="ic-btn del" type="submit" title="Cancelar cita"><?= icon('trash', 16) ?></button>
