@@ -243,10 +243,12 @@ Datos de prueba eliminados y stock de `PROD01` restaurado a 5.
 
 | Rol | Correo | Contraseña |
 |---|---|---|
-| Administrador | `admin.test@test.bo` | `TatianaAdmin2026!` |
-| Cliente | `quispeliz143@gmail.com` | `TatianaCliente2026!` |
+| Administrador | `admin.test@test.bo` | `186c9075` |
+| Cliente | `quispeliz143@gmail.com` | `12345678` |
 
-> Cambiar estas contraseñas antes de publicar en producción.
+> Son las credenciales incluidas en el volcado
+> `database/tatiana_skins_and_beauty_corregida.sql`. Cambiarlas antes de
+> publicar en producción (especialmente la del cliente, que es débil).
 
 ---
 

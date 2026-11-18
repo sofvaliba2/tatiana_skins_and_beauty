@@ -33,8 +33,10 @@ require __DIR__ . '/../layout/admin_header.php';
                 <td><?= e($p['nombre_sucursal'] ?? '—') ?></td>
                 <td><?= bs($p['precio_total'] ?? 0) ?><br><small class="muted">Anticipo <?= bs($p['anticipo'] ?? 0) ?></small></td>
                 <td>
-                    <?php if ($comp !== ''): ?>
+                    <?php if ($comp !== '' && archivo_existe($comp)): ?>
                         <a class="link" href="<?= e(url_archivo($comp)) ?>" target="_blank">Ver comprobante</a>
+                    <?php elseif ($comp !== ''): ?>
+                        <span class="muted">Archivo no disponible</span>
                     <?php else: ?>
                         <span class="muted">No adjunto</span>
                     <?php endif; ?>

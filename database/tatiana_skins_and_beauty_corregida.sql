@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 11-11-2026 a las 02:03:21
+-- Tiempo de generación: 18-11-2026 a las 12:41:56
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -138,7 +138,7 @@ CREATE TABLE `compras_por_usuario` (
 CREATE TABLE `cuenta_usuario` (
   `id_cuentaUsuario` int(11) NOT NULL,
   `correo` varchar(100) DEFAULT NULL,
-  `password` varchar(50) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
   `id_rol` varchar(10) DEFAULT NULL,
   `id_usuario` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -148,10 +148,11 @@ CREATE TABLE `cuenta_usuario` (
 --
 
 INSERT INTO `cuenta_usuario` (`id_cuentaUsuario`, `correo`, `password`, `id_rol`, `id_usuario`) VALUES
-(1, 'admin.test@test.bo', '9NQSYTo5tABnEL2TYlXk5zo++GB/zEY7ou0+0ZJzv6M=', 'ROL01', 'ADM001'),
-(2, 'quispeliz143@gmail.com', 'hqS3+cD42fwOBlPJEG3R23/qnB+z8Wq9vZ+fdUA4R9w=', 'ROL03', 'CLI0001'),
+(1, 'admin.test@test.bo', '$2y$10$giIeZgzp0iUt40grmIPXTegLPwbHEB/rYdp120cRQ7fJEDXriD7Fm', 'ROL01', 'ADM001'),
+(2, 'quispeliz143@gmail.com', '$2y$10$iHb/rElQP17UgxbrnXjmYOSXQ/aTZ5oxJTOhX3Nxa0rSNEavz.cJi', 'ROL03', 'CLI0001'),
 (3, 'morenosamantha016@gmail.com', '3Zf4ONFiZepW03KNXmKnK5xEB4rLSATZrGVQ0nzTcxs=', 'ROL03', 'CLI0002'),
-(4, 'luzzegarra@gmail.com', '4CwETg7A9MqjyL4ZxqbMxAmV7rjbk8wokqQ6uYJh4Gc=', 'ROL03', 'CLI0003');
+(4, 'luzzegarra@gmail.com', '4CwETg7A9MqjyL4ZxqbMxAmV7rjbk8wokqQ6uYJh4Gc=', 'ROL03', 'CLI0003'),
+(5, 'empleado@empleado.com', '$2y$10$FJnAWRPqr/ZWliLFGxSw0.qVBwoQDxl0azxfpObuQcJKHixieOlGu', 'ROL02', 'EMP001');
 
 -- --------------------------------------------------------
 
@@ -165,15 +166,16 @@ CREATE TABLE `detalle_compra` (
   `precio_unitario` decimal(10,2) DEFAULT NULL,
   `subtotal` decimal(10,2) DEFAULT NULL,
   `id_compra` int(11) DEFAULT NULL,
-  `id_producto` varchar(10) DEFAULT NULL
+  `id_producto` varchar(10) DEFAULT NULL,
+  `id_servicio` varchar(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `detalle_compra`
 --
 
-INSERT INTO `detalle_compra` (`id_detalle`, `cantidad`, `precio_unitario`, `subtotal`, `id_compra`, `id_producto`) VALUES
-(1, 1, 250.00, 250.00, 1, 'PROD02');
+INSERT INTO `detalle_compra` (`id_detalle`, `cantidad`, `precio_unitario`, `subtotal`, `id_compra`, `id_producto`, `id_servicio`) VALUES
+(1, 1, 250.00, 250.00, 1, 'PROD02', NULL);
 
 -- --------------------------------------------------------
 
@@ -212,7 +214,8 @@ CREATE TABLE `detalle_reserva` (
 
 INSERT INTO `detalle_reserva` (`id_detalle`, `cantidad`, `precio_unitario`, `subtotal`, `id_servicio`, `id_reserva`) VALUES
 (1, 1, 140.00, 140.00, 'SERV02', 1),
-(2, 1, 100.00, 100.00, 'SERV03', 2);
+(2, 1, 100.00, 100.00, 'SERV03', 2),
+(3, 1, 15.00, 15.00, 'SERV01', 3);
 
 -- --------------------------------------------------------
 
@@ -236,7 +239,8 @@ CREATE TABLE `historial_cliente` (
 --
 
 INSERT INTO `historial_cliente` (`id_historial`, `alergias`, `objetivo_piel`, `abierto_recomendaciones`, `rutina_actual`, `observaciones_sesion`, `fecha_registro`, `id_reserva`) VALUES
-(1, NULL, NULL, 0, NULL, 'Notas de reserva: Tratamiento con cremas nivea', '2026-10-21 20:14:57', 1);
+(1, NULL, NULL, 0, NULL, 'Notas de reserva: Tratamiento con cremas nivea', '2026-10-21 20:14:57', 1),
+(2, 'ninguna', 'Piel: Seca · Objetivos: Hidratación', 1, '', '', '2026-11-15 20:28:55', 3);
 
 -- --------------------------------------------------------
 
@@ -340,7 +344,38 @@ CREATE TABLE `metodo_pago` (
 --
 
 INSERT INTO `metodo_pago` (`id_metodoPago`, `nombre_metodoPago`, `tipo`, `estado`) VALUES
-('MP01', 'Efectivo', 'Presencial', 'Activo');
+('MP01', 'Efectivo', 'Presencial', 'activo'),
+('MP02', 'QR / Transferencia', 'Digital', 'activo'),
+('MP03', 'QR', 'qr', 'activo'),
+('MP04', 'Tarjeta', 'tarjeta', 'activo');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `pago_reserva`
+--
+
+CREATE TABLE `pago_reserva` (
+  `id_pago` int(11) NOT NULL,
+  `id_reserva` int(11) NOT NULL,
+  `tipo` varchar(20) NOT NULL DEFAULT 'anticipo',
+  `monto` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `id_metodoPago` varchar(10) DEFAULT NULL,
+  `estado` varchar(20) NOT NULL DEFAULT 'por_verificar',
+  `comprobante` varchar(255) DEFAULT NULL,
+  `codigo` varchar(40) DEFAULT NULL,
+  `fecha_registro` datetime DEFAULT NULL,
+  `fecha_verificacion` datetime DEFAULT NULL,
+  `verificado_por` varchar(100) DEFAULT NULL,
+  `observacion` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `pago_reserva`
+--
+
+INSERT INTO `pago_reserva` (`id_pago`, `id_reserva`, `tipo`, `monto`, `id_metodoPago`, `estado`, `comprobante`, `codigo`, `fecha_registro`, `fecha_verificacion`, `verificado_por`, `observacion`) VALUES
+(1, 3, 'anticipo', 15.00, 'MP03', 'por_verificar', 'uploads/comprobantes/res_3_20261115202951_3e53db.jpg', 'PAG-20261115-C67B0E9C3840', '2026-11-15 20:29:51', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -371,6 +406,27 @@ INSERT INTO `producto` (`id_producto`, `nombre_producto`, `descripcion`, `precio
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `promocion`
+--
+
+CREATE TABLE `promocion` (
+  `id_promocion` varchar(10) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `id_producto` varchar(10) DEFAULT NULL,
+  `id_servicio` varchar(10) DEFAULT NULL,
+  `precio_original` decimal(10,2) NOT NULL,
+  `precio_promocional` decimal(10,2) NOT NULL,
+  `fecha_inicio` date NOT NULL,
+  `fecha_fin` date NOT NULL,
+  `estado` varchar(10) NOT NULL DEFAULT 'activa',
+  `imagen_url` varchar(200) DEFAULT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `reserva`
 --
 
@@ -378,6 +434,17 @@ CREATE TABLE `reserva` (
   `id_reserva` int(11) NOT NULL,
   `fecha` date DEFAULT NULL,
   `hora` time DEFAULT NULL,
+  `tipo_tratamiento` varchar(30) DEFAULT NULL,
+  `zona_tratamiento` varchar(50) DEFAULT NULL,
+  `respuestas` longtext DEFAULT NULL,
+  `precio_total` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `anticipo` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `monto_pagado` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `saldo_pendiente` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `estado_pago` varchar(20) NOT NULL DEFAULT 'sin_pago',
+  `fecha_pago` datetime DEFAULT NULL,
+  `comprobante` varchar(255) DEFAULT NULL,
+  `codigo_pago` varchar(40) DEFAULT NULL,
   `estado` varchar(15) DEFAULT NULL,
   `id_sucursal` varchar(10) DEFAULT NULL,
   `id_metodoPago` varchar(10) DEFAULT NULL,
@@ -388,9 +455,10 @@ CREATE TABLE `reserva` (
 -- Volcado de datos para la tabla `reserva`
 --
 
-INSERT INTO `reserva` (`id_reserva`, `fecha`, `hora`, `estado`, `id_sucursal`, `id_metodoPago`, `id_usuario`) VALUES
-(1, '2026-10-23', '11:00:00', 'pendiente', 'SUC01', NULL, 'CLI0001'),
-(2, '2026-10-30', '14:00:00', 'pendiente', 'SUC01', NULL, 'CLI0001');
+INSERT INTO `reserva` (`id_reserva`, `fecha`, `hora`, `tipo_tratamiento`, `zona_tratamiento`, `respuestas`, `precio_total`, `anticipo`, `monto_pagado`, `saldo_pendiente`, `estado_pago`, `fecha_pago`, `comprobante`, `codigo_pago`, `estado`, `id_sucursal`, `id_metodoPago`, `id_usuario`) VALUES
+(1, '2026-10-23', '11:00:00', 'depilacion', NULL, NULL, 140.00, 30.00, 0.00, 140.00, 'sin_pago', NULL, NULL, NULL, 'atendida', 'SUC01', NULL, 'CLI0001'),
+(2, '2026-10-30', '14:00:00', 'depilacion', NULL, NULL, 100.00, 30.00, 0.00, 100.00, 'sin_pago', NULL, NULL, NULL, 'cancelada', 'SUC01', NULL, 'CLI0001'),
+(3, '2026-11-16', '13:00:00', 'facial', NULL, '{\"tipo_tratamiento\":\"facial\",\"observaciones\":\"\",\"tipo_piel\":\"Seca\",\"objetivos\":[\"Hidratación\"],\"tratamiento_previo\":\"no\",\"alergias\":\"no\"}', 15.00, 15.00, 0.00, 0.00, 'por_verificar', NULL, 'uploads/comprobantes/res_3_20261115202951_3e53db.jpg', 'PAG-20261115-C67B0E9C3840', 'confirmada', 'SUC01', 'MP03', 'CLI0001');
 
 -- --------------------------------------------------------
 
@@ -492,6 +560,30 @@ CREATE TABLE `servicio_precio_duracion` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `servicio_producto`
+--
+
+CREATE TABLE `servicio_producto` (
+  `id_servicio` varchar(10) NOT NULL,
+  `id_producto` varchar(10) NOT NULL,
+  `recomendado` tinyint(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `servicio_producto`
+--
+
+INSERT INTO `servicio_producto` (`id_servicio`, `id_producto`, `recomendado`) VALUES
+('SERV01', 'PROD01', 1),
+('SERV01', 'PROD02', 1),
+('SERV01', 'PROD04', 1),
+('SERV02', 'PROD01', 1),
+('SERV03', 'PROD03', 1),
+('SERV04', 'PROD03', 1);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `sucursal`
 --
 
@@ -562,7 +654,8 @@ INSERT INTO `usuario` (`id_usuario`, `nombre`, `ap_paterno`, `ap_materno`, `tele
 ('ADM001', 'Admin', 'Prueba', '', '', NULL, 'ROL01', NULL),
 ('CLI0001', 'Maria', 'Quispe', 'Mamani', '64170832', '2004-03-12', 'ROL03', NULL),
 ('CLI0002', 'sam', 'moreno', 'zambrano', '21563465135', '2006-06-01', 'ROL03', NULL),
-('CLI0003', 'luz', 'Zegarra', 'Apaza', '54658464', '2026-07-16', 'ROL03', NULL);
+('CLI0003', 'luz', 'Zegarra', 'Apaza', '54658464', '2026-07-16', 'ROL03', NULL),
+('EMP001', 'Tatiana', 'Maceda', 'Bustillos', '78935241', NULL, 'ROL02', 'SUC01');
 
 -- --------------------------------------------------------
 
@@ -732,6 +825,118 @@ CREATE TABLE `vw_productos_stock_bajo` (
 ,`nombre_producto` varchar(80)
 ,`precio` decimal(10,2)
 ,`stock` int(11)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vw_promociones`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vw_promociones` (
+`id` varchar(10)
+,`id_promocion` varchar(10)
+,`titulo` varchar(100)
+,`nombre` varchar(100)
+,`descripcion` varchar(255)
+,`id_producto` varchar(10)
+,`id_servicio` varchar(10)
+,`tipo_articulo` varchar(17)
+,`articulo` varchar(100)
+,`precio_original` decimal(10,2)
+,`precio_promocional` decimal(10,2)
+,`descuento` decimal(17,2)
+,`fecha_inicio` date
+,`fecha_fin` date
+,`estado` varchar(10)
+,`estado_calculado` varchar(10)
+,`dias_restantes` int(7)
+,`imagen_url` varchar(200)
+,`fecha_registro` timestamp
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vw_promociones_activas`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vw_promociones_activas` (
+`id` varchar(10)
+,`id_promocion` varchar(10)
+,`titulo` varchar(100)
+,`nombre` varchar(100)
+,`descripcion` varchar(255)
+,`id_producto` varchar(10)
+,`id_servicio` varchar(10)
+,`tipo_articulo` varchar(17)
+,`articulo` varchar(100)
+,`precio_original` decimal(10,2)
+,`precio_promocional` decimal(10,2)
+,`descuento` decimal(17,2)
+,`fecha_inicio` date
+,`fecha_fin` date
+,`estado` varchar(10)
+,`estado_calculado` varchar(10)
+,`dias_restantes` int(7)
+,`imagen_url` varchar(200)
+,`fecha_registro` timestamp
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vw_promociones_por_vencer`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vw_promociones_por_vencer` (
+`id` varchar(10)
+,`id_promocion` varchar(10)
+,`titulo` varchar(100)
+,`nombre` varchar(100)
+,`descripcion` varchar(255)
+,`id_producto` varchar(10)
+,`id_servicio` varchar(10)
+,`tipo_articulo` varchar(17)
+,`articulo` varchar(100)
+,`precio_original` decimal(10,2)
+,`precio_promocional` decimal(10,2)
+,`descuento` decimal(17,2)
+,`fecha_inicio` date
+,`fecha_fin` date
+,`estado` varchar(10)
+,`estado_calculado` varchar(10)
+,`dias_restantes` int(7)
+,`imagen_url` varchar(200)
+,`fecha_registro` timestamp
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vw_promociones_vencidas`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vw_promociones_vencidas` (
+`id` varchar(10)
+,`id_promocion` varchar(10)
+,`titulo` varchar(100)
+,`nombre` varchar(100)
+,`descripcion` varchar(255)
+,`id_producto` varchar(10)
+,`id_servicio` varchar(10)
+,`tipo_articulo` varchar(17)
+,`articulo` varchar(100)
+,`precio_original` decimal(10,2)
+,`precio_promocional` decimal(10,2)
+,`descuento` decimal(17,2)
+,`fecha_inicio` date
+,`fecha_fin` date
+,`estado` varchar(10)
+,`estado_calculado` varchar(10)
+,`dias_restantes` int(7)
+,`imagen_url` varchar(200)
+,`fecha_registro` timestamp
 );
 
 -- --------------------------------------------------------
@@ -1034,6 +1239,42 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 -- --------------------------------------------------------
 
 --
+-- Estructura para la vista `vw_promociones`
+--
+DROP TABLE IF EXISTS `vw_promociones`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_promociones`  AS SELECT `p`.`id_promocion` AS `id`, `p`.`id_promocion` AS `id_promocion`, `p`.`nombre` AS `titulo`, `p`.`nombre` AS `nombre`, `p`.`descripcion` AS `descripcion`, `p`.`id_producto` AS `id_producto`, `p`.`id_servicio` AS `id_servicio`, CASE WHEN `p`.`id_servicio` is not null AND `p`.`id_producto` is not null THEN 'producto_servicio' WHEN `p`.`id_servicio` is not null THEN 'servicio' WHEN `p`.`id_producto` is not null THEN 'producto' ELSE 'general' END AS `tipo_articulo`, coalesce(`pr`.`nombre_producto`,`s`.`nombre`,`p`.`nombre`) AS `articulo`, `p`.`precio_original` AS `precio_original`, `p`.`precio_promocional` AS `precio_promocional`, CASE WHEN `p`.`precio_original` > 0 THEN round((`p`.`precio_original` - `p`.`precio_promocional`) / `p`.`precio_original` * 100,2) ELSE 0 END AS `descuento`, `p`.`fecha_inicio` AS `fecha_inicio`, `p`.`fecha_fin` AS `fecha_fin`, `p`.`estado` AS `estado`, CASE WHEN `p`.`estado` <> 'activa' THEN 'inactiva' WHEN curdate() < `p`.`fecha_inicio` THEN 'programada' WHEN curdate() > `p`.`fecha_fin` THEN 'vencida' ELSE 'activa' END AS `estado_calculado`, to_days(`p`.`fecha_fin`) - to_days(curdate()) AS `dias_restantes`, `p`.`imagen_url` AS `imagen_url`, `p`.`fecha_registro` AS `fecha_registro` FROM ((`promocion` `p` left join `producto` `pr` on(`pr`.`id_producto` = `p`.`id_producto`)) left join `servicio` `s` on(`s`.`id_servicio` = `p`.`id_servicio`)) ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vw_promociones_activas`
+--
+DROP TABLE IF EXISTS `vw_promociones_activas`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_promociones_activas`  AS SELECT `vw_promociones`.`id` AS `id`, `vw_promociones`.`id_promocion` AS `id_promocion`, `vw_promociones`.`titulo` AS `titulo`, `vw_promociones`.`nombre` AS `nombre`, `vw_promociones`.`descripcion` AS `descripcion`, `vw_promociones`.`id_producto` AS `id_producto`, `vw_promociones`.`id_servicio` AS `id_servicio`, `vw_promociones`.`tipo_articulo` AS `tipo_articulo`, `vw_promociones`.`articulo` AS `articulo`, `vw_promociones`.`precio_original` AS `precio_original`, `vw_promociones`.`precio_promocional` AS `precio_promocional`, `vw_promociones`.`descuento` AS `descuento`, `vw_promociones`.`fecha_inicio` AS `fecha_inicio`, `vw_promociones`.`fecha_fin` AS `fecha_fin`, `vw_promociones`.`estado` AS `estado`, `vw_promociones`.`estado_calculado` AS `estado_calculado`, `vw_promociones`.`dias_restantes` AS `dias_restantes`, `vw_promociones`.`imagen_url` AS `imagen_url`, `vw_promociones`.`fecha_registro` AS `fecha_registro` FROM `vw_promociones` WHERE `vw_promociones`.`estado` = 'activa' AND curdate() between `vw_promociones`.`fecha_inicio` and `vw_promociones`.`fecha_fin` ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vw_promociones_por_vencer`
+--
+DROP TABLE IF EXISTS `vw_promociones_por_vencer`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_promociones_por_vencer`  AS SELECT `vw_promociones`.`id` AS `id`, `vw_promociones`.`id_promocion` AS `id_promocion`, `vw_promociones`.`titulo` AS `titulo`, `vw_promociones`.`nombre` AS `nombre`, `vw_promociones`.`descripcion` AS `descripcion`, `vw_promociones`.`id_producto` AS `id_producto`, `vw_promociones`.`id_servicio` AS `id_servicio`, `vw_promociones`.`tipo_articulo` AS `tipo_articulo`, `vw_promociones`.`articulo` AS `articulo`, `vw_promociones`.`precio_original` AS `precio_original`, `vw_promociones`.`precio_promocional` AS `precio_promocional`, `vw_promociones`.`descuento` AS `descuento`, `vw_promociones`.`fecha_inicio` AS `fecha_inicio`, `vw_promociones`.`fecha_fin` AS `fecha_fin`, `vw_promociones`.`estado` AS `estado`, `vw_promociones`.`estado_calculado` AS `estado_calculado`, `vw_promociones`.`dias_restantes` AS `dias_restantes`, `vw_promociones`.`imagen_url` AS `imagen_url`, `vw_promociones`.`fecha_registro` AS `fecha_registro` FROM `vw_promociones` WHERE `vw_promociones`.`estado` = 'activa' AND curdate() between `vw_promociones`.`fecha_inicio` and `vw_promociones`.`fecha_fin` AND to_days(`vw_promociones`.`fecha_fin`) - to_days(curdate()) <= 7 ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vw_promociones_vencidas`
+--
+DROP TABLE IF EXISTS `vw_promociones_vencidas`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_promociones_vencidas`  AS SELECT `vw_promociones`.`id` AS `id`, `vw_promociones`.`id_promocion` AS `id_promocion`, `vw_promociones`.`titulo` AS `titulo`, `vw_promociones`.`nombre` AS `nombre`, `vw_promociones`.`descripcion` AS `descripcion`, `vw_promociones`.`id_producto` AS `id_producto`, `vw_promociones`.`id_servicio` AS `id_servicio`, `vw_promociones`.`tipo_articulo` AS `tipo_articulo`, `vw_promociones`.`articulo` AS `articulo`, `vw_promociones`.`precio_original` AS `precio_original`, `vw_promociones`.`precio_promocional` AS `precio_promocional`, `vw_promociones`.`descuento` AS `descuento`, `vw_promociones`.`fecha_inicio` AS `fecha_inicio`, `vw_promociones`.`fecha_fin` AS `fecha_fin`, `vw_promociones`.`estado` AS `estado`, `vw_promociones`.`estado_calculado` AS `estado_calculado`, `vw_promociones`.`dias_restantes` AS `dias_restantes`, `vw_promociones`.`imagen_url` AS `imagen_url`, `vw_promociones`.`fecha_registro` AS `fecha_registro` FROM `vw_promociones` WHERE curdate() > `vw_promociones`.`fecha_fin` ;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura para la vista `vw_sucursales_horarios`
 --
 DROP TABLE IF EXISTS `vw_sucursales_horarios`;
@@ -1097,6 +1338,7 @@ ALTER TABLE `compra`
 --
 ALTER TABLE `cuenta_usuario`
   ADD PRIMARY KEY (`id_cuentaUsuario`),
+  ADD UNIQUE KEY `uk_cuenta_correo` (`correo`),
   ADD KEY `fk_rolCuenta` (`id_rol`),
   ADD KEY `fk_usuarioCuenta` (`id_usuario`);
 
@@ -1106,7 +1348,8 @@ ALTER TABLE `cuenta_usuario`
 ALTER TABLE `detalle_compra`
   ADD PRIMARY KEY (`id_detalle`),
   ADD KEY `fk_detalle_compra_maestro` (`id_compra`),
-  ADD KEY `fk_detalle_compra_producto` (`id_producto`);
+  ADD KEY `fk_detalle_compra_producto` (`id_producto`),
+  ADD KEY `idx_detalle_compra_servicio` (`id_servicio`);
 
 --
 -- Indices de la tabla `detalle_reserva`
@@ -1137,6 +1380,15 @@ ALTER TABLE `metodo_pago`
   ADD PRIMARY KEY (`id_metodoPago`);
 
 --
+-- Indices de la tabla `pago_reserva`
+--
+ALTER TABLE `pago_reserva`
+  ADD PRIMARY KEY (`id_pago`),
+  ADD UNIQUE KEY `uk_pago_codigo` (`codigo`),
+  ADD KEY `idx_pago_reserva` (`id_reserva`),
+  ADD KEY `fk_pago_metodoPago` (`id_metodoPago`);
+
+--
 -- Indices de la tabla `producto`
 --
 ALTER TABLE `producto`
@@ -1145,13 +1397,26 @@ ALTER TABLE `producto`
   ADD KEY `fk_producto_categoria` (`id_categoria`);
 
 --
+-- Indices de la tabla `promocion`
+--
+ALTER TABLE `promocion`
+  ADD PRIMARY KEY (`id_promocion`),
+  ADD KEY `idx_promocion_fechas` (`fecha_inicio`,`fecha_fin`),
+  ADD KEY `idx_promocion_estado` (`estado`),
+  ADD KEY `idx_promocion_producto` (`id_producto`),
+  ADD KEY `idx_promocion_servicio` (`id_servicio`);
+
+--
 -- Indices de la tabla `reserva`
 --
 ALTER TABLE `reserva`
   ADD PRIMARY KEY (`id_reserva`),
+  ADD UNIQUE KEY `uk_reserva_codigo_pago` (`codigo_pago`),
   ADD KEY `fk_reserva_sucursal` (`id_sucursal`),
   ADD KEY `fk_reserva_metodoPago` (`id_metodoPago`),
-  ADD KEY `fk_reserva_usuario` (`id_usuario`);
+  ADD KEY `fk_reserva_usuario` (`id_usuario`),
+  ADD KEY `idx_reserva_agenda` (`fecha`,`hora`,`id_sucursal`,`estado`),
+  ADD KEY `idx_reserva_pago` (`estado_pago`);
 
 --
 -- Indices de la tabla `rol`
@@ -1165,6 +1430,13 @@ ALTER TABLE `rol`
 ALTER TABLE `servicio`
   ADD PRIMARY KEY (`id_servicio`),
   ADD KEY `fk_servicio_categoria` (`id_categoriaS`);
+
+--
+-- Indices de la tabla `servicio_producto`
+--
+ALTER TABLE `servicio_producto`
+  ADD PRIMARY KEY (`id_servicio`,`id_producto`),
+  ADD KEY `fk_sp_producto` (`id_producto`);
 
 --
 -- Indices de la tabla `sucursal`
@@ -1188,37 +1460,43 @@ ALTER TABLE `usuario`
 -- AUTO_INCREMENT de la tabla `compra`
 --
 ALTER TABLE `compra`
-  MODIFY `id_compra` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_compra` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `cuenta_usuario`
 --
 ALTER TABLE `cuenta_usuario`
-  MODIFY `id_cuentaUsuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_cuentaUsuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `detalle_compra`
 --
 ALTER TABLE `detalle_compra`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `detalle_reserva`
 --
 ALTER TABLE `detalle_reserva`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `historial_cliente`
 --
 ALTER TABLE `historial_cliente`
-  MODIFY `id_historial` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_historial` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `pago_reserva`
+--
+ALTER TABLE `pago_reserva`
+  MODIFY `id_pago` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `reserva`
 --
 ALTER TABLE `reserva`
-  MODIFY `id_reserva` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_reserva` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Restricciones para tablas volcadas
@@ -1265,10 +1543,24 @@ ALTER TABLE `horario_sucursal`
   ADD CONSTRAINT `fk_horario_sucursal` FOREIGN KEY (`id_sucursal`) REFERENCES `sucursal` (`id_sucursal`) ON DELETE CASCADE;
 
 --
+-- Filtros para la tabla `pago_reserva`
+--
+ALTER TABLE `pago_reserva`
+  ADD CONSTRAINT `fk_pago_metodoPago` FOREIGN KEY (`id_metodoPago`) REFERENCES `metodo_pago` (`id_metodoPago`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_pago_reserva` FOREIGN KEY (`id_reserva`) REFERENCES `reserva` (`id_reserva`) ON DELETE CASCADE;
+
+--
 -- Filtros para la tabla `producto`
 --
 ALTER TABLE `producto`
   ADD CONSTRAINT `fk_producto_categoria` FOREIGN KEY (`id_categoria`) REFERENCES `categoria_producto` (`id_categoria`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `promocion`
+--
+ALTER TABLE `promocion`
+  ADD CONSTRAINT `fk_promocion_producto` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_promocion_servicio` FOREIGN KEY (`id_servicio`) REFERENCES `servicio` (`id_servicio`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `reserva`
@@ -1283,6 +1575,13 @@ ALTER TABLE `reserva`
 --
 ALTER TABLE `servicio`
   ADD CONSTRAINT `fk_servicio_categoria` FOREIGN KEY (`id_categoriaS`) REFERENCES `categoria_servicio` (`id_categoriaS`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `servicio_producto`
+--
+ALTER TABLE `servicio_producto`
+  ADD CONSTRAINT `fk_sp_producto` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_sp_servicio` FOREIGN KEY (`id_servicio`) REFERENCES `servicio` (`id_servicio`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `usuario`

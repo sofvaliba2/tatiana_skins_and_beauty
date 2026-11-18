@@ -76,8 +76,10 @@ $hayFiltros = ($fecha ?? '') !== '' || $mes !== '' || $anio !== '' || ($estado ?
                     <td><?= estado((string)$c['estado']) ?></td>
                     <td>
                         <?= estado_pago($estadoPago) ?>
-                        <?php if ($comp !== ''): ?>
+                        <?php if ($comp !== '' && archivo_existe($comp)): ?>
                             <br><a class="link" href="<?= e(url_archivo($comp)) ?>" target="_blank" title="Ver comprobante"><?= icon('eye', 14) ?> Comprobante</a>
+                        <?php elseif ($comp !== ''): ?>
+                            <br><span class="muted" title="El archivo no está en el servidor"><?= icon('eye', 14) ?> Comprobante no disponible</span>
                         <?php endif; ?>
                     </td>
                     <td><div class="acts" style="flex-wrap:wrap">

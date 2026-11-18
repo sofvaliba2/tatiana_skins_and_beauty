@@ -161,6 +161,27 @@ function url_archivo(?string $ruta): string
     return BASE_URL . '/' . $ruta;
 }
 
+/**
+ * Indica si un archivo local (comprobante, imagen) existe realmente en public/.
+ * Las URLs externas se consideran válidas. Evita enlaces rotos cuando el
+ * registro existe en MySQL pero el archivo no está en el servidor.
+ */
+function archivo_existe(?string $ruta): bool
+{
+    $ruta = trim((string)$ruta);
+    if ($ruta === '') {
+        return false;
+    }
+    if (preg_match('#^https?://#i', $ruta)) {
+        return true;
+    }
+    $ruta = ltrim(str_replace('\\', '/', $ruta), '/');
+    if (str_starts_with($ruta, 'public/')) {
+        $ruta = substr($ruta, 7);
+    }
+    return is_file(BASE_PATH . '/public/' . $ruta);
+}
+
 /** Radios Sí/No reutilizables en formularios dinámicos. */
 function radios_si_no(string $campo, string $valorActual = ''): string
 {
