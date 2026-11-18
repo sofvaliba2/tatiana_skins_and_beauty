@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Flash;
+use App\Models\Compra;
 use App\Models\Reserva;
 
 abstract class Controller
@@ -31,11 +32,11 @@ abstract class Controller
                     ? Reserva::contarPendientesSucursal($sucursal)
                     : 0;
                 $avisos['avisos_pagos'] = $sucursal !== ''
-                    ? Reserva::contarPagosPorVerificarSucursal($sucursal)
+                    ? Reserva::contarPagosPorVerificarSucursal($sucursal) + Compra::contarPagosPorVerificarSucursal($sucursal)
                     : 0;
             } elseif (Auth::esAdmin()) {
                 $avisos['avisos_admin'] = Reserva::contarPendientes();
-                $avisos['avisos_pagos'] = Reserva::contarPagosPorVerificar();
+                $avisos['avisos_pagos'] = Reserva::contarPagosPorVerificar() + Compra::contarPagosPorVerificar();
             }
         } catch (\Throwable $e) {
         }

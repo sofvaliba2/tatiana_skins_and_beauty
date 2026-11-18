@@ -41,6 +41,7 @@ $preguntasZona = [
 
 <section class="section" style="padding-top:2.5rem">
     <div class="container">
+        <p style="margin-bottom:1.2rem"><?= enlace_volver('panel', [], 'Volver a mi panel') ?></p>
         <?php $paso = 1; require __DIR__ . '/_stepper.php'; ?>
 
         <?php if (!empty($errores['_general'])): ?>

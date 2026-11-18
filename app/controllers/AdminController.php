@@ -242,7 +242,31 @@ final class AdminController extends Controller
         $pagina = max(1, $this->entero('p', 1));
 
         if ($this->esPost()) {
-            $this->registrarVenta();
+            $accion = $this->texto('accion');
+            if ($accion === 'pago_confirmar') {
+                $id = $this->entero('id_compra');
+                if (Compra::confirmarPago($id, Auth::id())) {
+                    Flash::ok('Pago de la compra #' . $id . ' confirmado.');
+                } else {
+                    Flash::error('No se pudo confirmar el pago de esa compra.');
+                }
+            } elseif ($accion === 'pago_rechazar') {
+                $id = $this->entero('id_compra');
+                $motivo = trim((string)($_POST['motivo'] ?? ''));
+                if ($motivo === '') {
+                    $motivo = 'Comprobante rechazado por el personal.';
+                }
+                if (Compra::rechazarPago($id, $motivo, Auth::id())) {
+                    Flash::ok('Comprobante de la compra #' . $id . ' rechazado. El stock fue devuelto.');
+                } else {
+                    Flash::error('No se pudo rechazar el comprobante de esa compra.');
+                }
+            } else {
+                $this->registrarVenta();
+            }
+            $this->redirigir('admin_ventas', array_filter([
+                'fecha' => $fecha, 'mes' => $mes, 'anio' => $anio,
+            ]));
         }
 
         ['filas' => $ventas, 'total' => $total] = Compra::ventas($fecha, $pagina, self::POR_PAGINA, $mes, $anio);

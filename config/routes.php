@@ -39,6 +39,7 @@ return [
     'perfil'               => [ClienteController::class, 'perfil', 'cliente'],
     'mis_compras'          => [ClienteController::class, 'compras', 'cliente'],
     'detalle_compra'       => [ClienteController::class, 'detalleCompra', 'cliente_personal'],
+    'comprobante_compra'   => [ClienteController::class, 'comprobanteCompra', 'cliente_personal'],
 
     // Reservas
     'reserva_nueva'        => [ReservaController::class, 'nueva', 'cliente'],

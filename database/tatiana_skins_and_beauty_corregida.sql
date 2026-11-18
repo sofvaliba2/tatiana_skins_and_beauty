@@ -73,7 +73,18 @@ CREATE TABLE `compra` (
   `nro_compra` varchar(20) DEFAULT NULL,
   `total_pagar` decimal(10,2) DEFAULT NULL,
   `id_usuario` varchar(100) DEFAULT NULL,
-  `id_metodoPago` varchar(10) DEFAULT NULL
+  `id_metodoPago` varchar(10) DEFAULT NULL,
+  `estado_pago` varchar(20) NOT NULL DEFAULT 'pagado',
+  `codigo_pago` varchar(40) DEFAULT NULL,
+  `comprobante` varchar(255) DEFAULT NULL,
+  `comprobante_nombre` varchar(255) DEFAULT NULL,
+  `comprobante_tipo` varchar(60) DEFAULT NULL,
+  `comprobante_datos` longblob DEFAULT NULL,
+  `fecha_pago` datetime DEFAULT NULL,
+  `fecha_verificacion` datetime DEFAULT NULL,
+  `verificado_por` varchar(100) DEFAULT NULL,
+  `observacion` varchar(255) DEFAULT NULL,
+  `id_sucursal` varchar(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -1334,9 +1345,11 @@ ALTER TABLE `categoria_servicio`
 --
 ALTER TABLE `compra`
   ADD PRIMARY KEY (`id_compra`),
+  ADD UNIQUE KEY `uk_compra_codigo_pago` (`codigo_pago`),
   ADD KEY `idx_compra_fecha` (`fecha_compra`),
   ADD KEY `fk_usuarioCompra` (`id_usuario`),
-  ADD KEY `fk_metodoPagoCompra` (`id_metodoPago`);
+  ADD KEY `fk_metodoPagoCompra` (`id_metodoPago`),
+  ADD KEY `fk_sucursalCompra` (`id_sucursal`);
 
 --
 -- Indices de la tabla `cuenta_usuario`
@@ -1512,6 +1525,7 @@ ALTER TABLE `reserva`
 --
 ALTER TABLE `compra`
   ADD CONSTRAINT `fk_metodoPagoCompra` FOREIGN KEY (`id_metodoPago`) REFERENCES `metodo_pago` (`id_metodoPago`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_sucursalCompra` FOREIGN KEY (`id_sucursal`) REFERENCES `sucursal` (`id_sucursal`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_usuarioCompra` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL;
 
 --

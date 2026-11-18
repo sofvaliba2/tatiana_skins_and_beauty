@@ -14,6 +14,7 @@ require __DIR__ . '/../layout/header.php';
 
 <section class="section" style="padding-top:2.5rem">
     <div class="container">
+        <p style="margin-bottom:1.2rem"><?= enlace_volver('home', [], 'Volver al inicio') ?></p>
         <div class="toolbar">
             <form class="search" method="get" action="<?= BASE_URL ?>/index.php" style="flex:1">
                 <input type="hidden" name="v" value="catalogo">

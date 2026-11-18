@@ -235,7 +235,12 @@ final class EmpleadoController extends Controller
         $ctx = $this->exigirSucursal();
 
         if ($this->esPost()) {
-            $this->registrarVenta($ctx);
+            $accion = $this->texto('accion');
+            if ($accion === 'pago_confirmar' || $accion === 'pago_rechazar') {
+                $this->verificarPagoCompra($ctx, $accion);
+            } else {
+                $this->registrarVenta($ctx);
+            }
         }
 
         $clientes = Usuario::listaClientesDeSucursal($ctx['id']);
@@ -251,6 +256,41 @@ final class EmpleadoController extends Controller
             'metodos',
             'ventas'
         ));
+    }
+
+    /** Confirma o rechaza el comprobante de una compra de la sucursal del empleado. */
+    private function verificarPagoCompra(array $ctx, string $accion): void
+    {
+        $id = $this->entero('id_compra');
+        $compra = $id > 0 ? Compra::porId($id) : null;
+        $idCliente = (string)($compra['id_usuario'] ?? '');
+        $deSucursal = $compra !== null && (
+            (string)($compra['id_sucursal'] ?? '') === (string)$ctx['id']
+            || ($idCliente !== '' && Usuario::clienteDeSucursal($idCliente, (string)$ctx['id']) !== null)
+        );
+        if (!$deSucursal) {
+            Flash::error('No puedes gestionar el pago de esa compra.');
+            $this->redirigir('empleado_ventas');
+        }
+
+        if ($accion === 'pago_confirmar') {
+            if (Compra::confirmarPago($id, Auth::id())) {
+                Flash::ok('Pago de la compra #' . $id . ' confirmado.');
+            } else {
+                Flash::error('No se pudo confirmar el pago de esa compra.');
+            }
+        } else {
+            $motivo = trim((string)($_POST['motivo'] ?? ''));
+            if ($motivo === '') {
+                $motivo = 'Comprobante rechazado por el personal.';
+            }
+            if (Compra::rechazarPago($id, $motivo, Auth::id())) {
+                Flash::ok('Comprobante de la compra #' . $id . ' rechazado. El stock fue devuelto.');
+            } else {
+                Flash::error('No se pudo rechazar el comprobante de esa compra.');
+            }
+        }
+        $this->redirigir('empleado_ventas');
     }
 
     public function comprobante(): void

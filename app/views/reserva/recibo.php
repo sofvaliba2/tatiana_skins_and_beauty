@@ -62,6 +62,7 @@ $cuadra = $itemsConError === 0 && abs(round($sumaSubtotales, 2) - (float)($resum
 
 <section class="section" style="padding-top:2.5rem">
     <div class="container">
+        <p style="margin-bottom:1.2rem"><?= enlace_volver('mis_reservas', [], 'Volver a mis reservas') ?></p>
         <?php $paso = 3; require __DIR__ . '/_stepper.php'; ?>
 
         <div class="recibo">

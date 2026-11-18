@@ -122,4 +122,86 @@ final class ClienteController extends Controller
         $items = Compra::items((int)$compra['id_compra']);
         $this->vista('cliente/detalle_compra.php', compact('compra', 'items'));
     }
+
+    /**
+     * Sirve el comprobante de pago de una compra desde MySQL, con respaldo en
+     * el archivo de disco. Mismos permisos que el detalle de la compra.
+     */
+    public function comprobanteCompra(): void
+    {
+        $id = $this->entero('id');
+        $compra = $id > 0 ? Compra::porId($id) : null;
+        if ($compra === null) {
+            (new ErroresController())->noEncontrado();
+            return;
+        }
+
+        $u = Auth::usuario() ?? [];
+        $rol = (string)($u['id_rol'] ?? '');
+        if ($rol === 'ROL03') {
+            if ((string)($compra['id_usuario'] ?? '') !== (string)($u['id'] ?? '')) {
+                (new ErroresController())->denegado();
+                return;
+            }
+        } elseif ($rol === 'ROL02') {
+            $idSucursal = (string)($u['sucursal'] ?? '');
+            $idCliente = (string)($compra['id_usuario'] ?? '');
+            $deSucursal = $idSucursal !== '' && (
+                (string)($compra['id_sucursal'] ?? '') === $idSucursal
+                || ($idCliente !== '' && Usuario::clienteDeSucursal($idCliente, $idSucursal) !== null)
+            );
+            if (!$deSucursal) {
+                (new ErroresController())->denegado();
+                return;
+            }
+        } elseif ($rol !== 'ROL01') {
+            (new ErroresController())->denegado();
+            return;
+        }
+
+        $comprobante = Compra::comprobantePago($id);
+        if ($comprobante === null) {
+            (new ErroresController())->noEncontrado();
+            return;
+        }
+
+        $datos = $comprobante['datos'] ?? null;
+        if (is_string($datos) && $datos !== '') {
+            $tipo = trim((string)($comprobante['tipo'] ?? ''));
+            if ($tipo === '' || !str_starts_with($tipo, 'image/')) {
+                $tipo = 'application/octet-stream';
+            }
+            $nombre = trim((string)($comprobante['nombre'] ?? ''));
+            if ($nombre === '') {
+                $nombre = 'comprobante-compra-' . $id;
+            }
+            header('Content-Type: ' . $tipo);
+            header('Content-Length: ' . strlen($datos));
+            header('Content-Disposition: inline; filename="' . rawurlencode($nombre) . '"');
+            header('X-Content-Type-Options: nosniff');
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            echo $datos;
+            exit;
+        }
+
+        $ruta = trim((string)($comprobante['ruta'] ?? ''));
+        $ruta = ltrim(str_replace('\\', '/', $ruta), '/');
+        if (str_starts_with($ruta, 'public/')) {
+            $ruta = substr($ruta, 7);
+        }
+        $absoluta = BASE_PATH . '/public/' . $ruta;
+        if ($ruta === '' || !is_file($absoluta)) {
+            (new ErroresController())->noEncontrado();
+            return;
+        }
+
+        $tipo = (new \finfo(FILEINFO_MIME_TYPE))->file($absoluta) ?: 'application/octet-stream';
+        header('Content-Type: ' . $tipo);
+        header('Content-Length: ' . (string)filesize($absoluta));
+        header('Content-Disposition: inline; filename="' . rawurlencode(basename($absoluta)) . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        readfile($absoluta);
+        exit;
+    }
 }

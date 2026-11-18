@@ -18,7 +18,7 @@ require __DIR__ . '/../layout/header.php';
         <?php else: ?>
             <table class="table">
                 <thead>
-                    <tr><th>Fecha</th><th>N° de compra</th><th>Método de pago</th><th>Ítems</th><th>Total</th><th></th></tr>
+                    <tr><th>Fecha</th><th>N° de compra</th><th>Método de pago</th><th>Ítems</th><th>Total</th><th>Pago</th><th></th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($compras as $c): ?>
@@ -28,6 +28,7 @@ require __DIR__ . '/../layout/header.php';
                         <td><?= e($c['nombre_metodoPago'] ?? 'Por definir') ?></td>
                         <td><?= (int)$c['items'] ?></td>
                         <td><?= bs($c['total_pagar']) ?></td>
+                        <td><?= estado_pago((string)($c['estado_pago'] ?? 'pagado')) ?></td>
                         <td><a class="btn btn-outline btn-sm" href="<?= ruta('detalle_compra', ['id' => $c['id_compra']]) ?>">Ver detalle</a></td>
                     </tr>
                 <?php endforeach; ?>

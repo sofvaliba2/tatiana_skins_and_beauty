@@ -6,6 +6,7 @@ require __DIR__ . '/../layout/header.php';
 ?>
 <section class="section">
     <div class="container">
+        <p style="margin-bottom:1rem"><?= enlace_volver('catalogo', [], 'Volver al catálogo') ?></p>
         <p class="muted" style="font-size:.9rem;margin-bottom:1rem">
             <a href="<?= ruta('catalogo') ?>">Catálogo</a> /
             <?php if ($producto['id_categoria'] !== null): ?>

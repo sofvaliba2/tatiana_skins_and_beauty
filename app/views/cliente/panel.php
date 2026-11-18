@@ -7,6 +7,7 @@ require __DIR__ . '/../layout/header.php';
 ?>
 <section class="section">
     <div class="container">
+        <p style="margin-bottom:1.2rem"><?= enlace_volver('home', [], 'Volver al inicio') ?></p>
         <div class="section-head" style="text-align:left">
             <span class="eyebrow">Hola, <?= e($u['nombre']) ?></span>
             <h2>Mi panel</h2>

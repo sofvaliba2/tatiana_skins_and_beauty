@@ -48,10 +48,15 @@ $hayFiltros = ($fecha ?? '') !== '' || $mes !== '' || $anio !== '';
         <?= vacio('No hay compras registradas todavía.', 'cart') ?>
     <?php else: ?>
     <table class="table">
-        <thead><tr><th>N° compra</th><th>Fecha</th><th>Cliente</th><th>Método</th><th>Ítems</th><th>Total</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>N° compra</th><th>Fecha</th><th>Cliente</th><th>Método</th><th>Ítems</th><th>Total</th><th>Pago</th><th>Acciones</th></tr></thead>
         <tbody>
         <?php foreach ($ventas as $v): ?>
-            <?php $imgVenta = trim((string)($v['imagen_url'] ?? '')); $tieneImgVenta = $imgVenta !== '' && (preg_match('#^https?://#i', $imgVenta) || is_file(BASE_PATH . '/public/' . $imgVenta)); ?>
+            <?php
+            $imgVenta = trim((string)($v['imagen_url'] ?? ''));
+            $tieneImgVenta = $imgVenta !== '' && (preg_match('#^https?://#i', $imgVenta) || is_file(BASE_PATH . '/public/' . $imgVenta));
+            $estadoPagoVenta = (string)($v['estado_pago'] ?? 'pagado');
+            $tieneComp = trim((string)($v['comprobante'] ?? '')) !== '' || (string)($v['comprobante_datos'] ?? '') !== '';
+            ?>
             <tr>
                 <td>
                     <div style="display:flex;align-items:center;gap:.6rem">
@@ -68,7 +73,30 @@ $hayFiltros = ($fecha ?? '') !== '' || $mes !== '' || $anio !== '';
                 <td><?= e($v['nombre_metodoPago'] ?? 'Por definir') ?></td>
                 <td><?= (int)$v['items'] ?></td>
                 <td><b><?= bs($v['total_pagar']) ?></b></td>
-                <td><div class="acts"><a class="ic-btn" href="<?= ruta('detalle_compra', ['id' => $v['id_compra']]) ?>" target="_blank" aria-label="Ver detalle"><?= icon('eye', 16) ?></a></div></td>
+                <td><?= estado_pago($estadoPagoVenta) ?></td>
+                <td>
+                    <div class="acts">
+                        <a class="ic-btn" href="<?= ruta('detalle_compra', ['id' => $v['id_compra']]) ?>" target="_blank" aria-label="Ver detalle"><?= icon('eye', 16) ?></a>
+                        <?php if ($tieneComp): ?>
+                            <a class="ic-btn" href="<?= ruta('comprobante_compra', ['id' => $v['id_compra']]) ?>" target="_blank" rel="noopener" aria-label="Ver comprobante"><?= icon('file', 16) ?></a>
+                        <?php endif; ?>
+                        <?php if ($estadoPagoVenta === 'por_verificar'): ?>
+                            <form method="post" action="<?= ruta('admin_ventas') ?>" style="display:inline" data-confirm="¿Confirmar el pago de esta compra?">
+                                <?= csrf() ?>
+                                <input type="hidden" name="accion" value="pago_confirmar">
+                                <input type="hidden" name="id_compra" value="<?= (int)$v['id_compra'] ?>">
+                                <button class="ic-btn ok" type="submit" aria-label="Confirmar pago"><?= icon('check', 16) ?></button>
+                            </form>
+                            <form method="post" action="<?= ruta('admin_ventas') ?>" style="display:inline" data-confirm="¿Rechazar el comprobante? Las unidades volverán al inventario.">
+                                <?= csrf() ?>
+                                <input type="hidden" name="accion" value="pago_rechazar">
+                                <input type="hidden" name="id_compra" value="<?= (int)$v['id_compra'] ?>">
+                                <input type="hidden" name="motivo" value="Comprobante rechazado por el personal.">
+                                <button class="ic-btn del" type="submit" aria-label="Rechazar comprobante"><?= icon('trash', 16) ?></button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                </td>
             </tr>
         <?php endforeach; ?>
         </tbody>

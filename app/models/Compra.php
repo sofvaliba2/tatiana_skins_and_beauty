@@ -16,8 +16,14 @@ final class Compra extends Model
      *   ['tipo' => 'servicio', 'id' => 'SERV01', 'cantidad' => 1]
      * También se mantiene el formato anterior ['id' => ..., 'precio' => ..., 'cantidad' => ...].
      */
-    public static function crear(string $idUsuario, ?string $idMetodo, array $items): array
-    {
+    public static function crear(
+        string $idUsuario,
+        ?string $idMetodo,
+        array $items,
+        ?string $idSucursal = null,
+        string $estadoPago = 'pagado',
+        ?array $comprobante = null
+    ): array {
         if ($items === []) {
             throw new \DomainException('Agrega al menos un producto o servicio a la venta.');
         }
@@ -25,7 +31,12 @@ final class Compra extends Model
             throw new \DomainException('La venta admite como máximo 50 líneas.');
         }
 
-        return self::transaccion(function () use ($idUsuario, $idMetodo, $items) {
+        $estadosValidos = ['pagado', 'por_verificar', 'pendiente_efectivo', 'rechazado', 'sin_pago'];
+        if (!in_array($estadoPago, $estadosValidos, true)) {
+            $estadoPago = 'pagado';
+        }
+
+        return self::transaccion(function () use ($idUsuario, $idMetodo, $items, $idSucursal, $estadoPago, $comprobante) {
             $detalle = [];
             $total = 0.0;
             foreach ($items as $item) {
@@ -106,13 +117,34 @@ final class Compra extends Model
             }
 
             $nro = 'C-' . str_pad((string)((int)self::value('SELECT COALESCE(MAX(id_compra),0) FROM compra') + 1), 6, '0', STR_PAD_LEFT);
-            $idCompra = Ids::insertarConEntero('compra', 'id_compra', [
+
+            $datosCompra = [
                 'fecha_compra'  => date('Y-m-d'),
                 'nro_compra'    => $nro,
                 'total_pagar'   => $total,
                 'id_usuario'    => $idUsuario,
                 'id_metodoPago' => $idMetodo,
-            ]);
+                'estado_pago'   => $estadoPago,
+            ];
+            if ($idSucursal !== null && $idSucursal !== '') {
+                $datosCompra['id_sucursal'] = $idSucursal;
+            }
+
+            $codigo = '';
+            if (is_array($comprobante) && trim((string)($comprobante['ruta'] ?? '')) !== '') {
+                $codigo = 'CMP-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(6)));
+                $datosCompra['estado_pago']        = 'por_verificar';
+                $datosCompra['codigo_pago']        = $codigo;
+                $datosCompra['comprobante']        = trim((string)($comprobante['ruta'] ?? ''));
+                $datosCompra['comprobante_nombre'] = trim((string)($comprobante['nombre'] ?? ''));
+                $datosCompra['comprobante_tipo']   = trim((string)($comprobante['tipo'] ?? ''));
+                $datosCompra['fecha_pago']         = date('Y-m-d H:i:s');
+                if (is_string($comprobante['datos'] ?? null) && $comprobante['datos'] !== '') {
+                    $datosCompra['comprobante_datos'] = $comprobante['datos'];
+                }
+            }
+
+            $idCompra = Ids::insertarConEntero('compra', 'id_compra', $datosCompra);
             foreach ($detalle as $linea) {
                 Ids::insertarConEntero('detalle_compra', 'id_detalle', [
                     'cantidad'        => $linea['cantidad'],
@@ -123,7 +155,14 @@ final class Compra extends Model
                     'id_servicio'     => $linea['id_servicio'],
                 ]);
             }
-            return ['id' => $idCompra, 'nro' => $nro, 'total' => $total, 'items' => $detalle];
+            return [
+                'id'          => $idCompra,
+                'nro'         => $nro,
+                'total'       => $total,
+                'items'       => $detalle,
+                'codigo'      => $codigo,
+                'estado_pago' => (string)$datosCompra['estado_pago'],
+            ];
         });
     }
 
@@ -174,7 +213,8 @@ final class Compra extends Model
              FROM compra c
              LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
              LEFT JOIN metodo_pago m ON m.id_metodoPago = c.id_metodoPago
-             WHERE c.id_usuario IN (
+             WHERE c.id_sucursal = ?
+                OR c.id_usuario IN (
                  SELECT u2.id_usuario FROM usuario u2
                  WHERE u2.id_rol = "ROL03"
                    AND (u2.id_sucursal = ? OR EXISTS (
@@ -184,7 +224,7 @@ final class Compra extends Model
              )
              ORDER BY c.fecha_compra DESC, c.id_compra DESC
              LIMIT ' . max(1, $limite),
-            [$idSucursal, $idSucursal]
+            [$idSucursal, $idSucursal, $idSucursal]
         );
     }
 
@@ -197,6 +237,110 @@ final class Compra extends Model
              LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
              WHERE c.id_compra = ?',
             [$id]
+        );
+    }
+
+    /** Comprobante de pago de una compra (binario en MySQL o ruta en disco). */
+    public static function comprobantePago(int $idCompra): ?array
+    {
+        $compra = self::one(
+            'SELECT comprobante, comprobante_nombre, comprobante_tipo, comprobante_datos
+             FROM compra WHERE id_compra = ?',
+            [$idCompra]
+        );
+        if ($compra === null) {
+            return null;
+        }
+        $ruta = trim((string)($compra['comprobante'] ?? ''));
+        $datos = $compra['comprobante_datos'] ?? null;
+        if ($ruta === '' && !(is_string($datos) && $datos !== '')) {
+            return null;
+        }
+        return [
+            'ruta'   => $ruta,
+            'nombre' => trim((string)($compra['comprobante_nombre'] ?? '')),
+            'tipo'   => trim((string)($compra['comprobante_tipo'] ?? '')),
+            'datos'  => $datos,
+        ];
+    }
+
+    /** El personal confirma el pago de una compra con comprobante pendiente. */
+    public static function confirmarPago(int $idCompra, string $verificadoPor = ''): bool
+    {
+        $compra = self::one('SELECT id_compra, estado_pago FROM compra WHERE id_compra = ?', [$idCompra]);
+        if ($compra === null || (string)($compra['estado_pago'] ?? '') !== 'por_verificar') {
+            return false;
+        }
+        $afectadas = self::run(
+            "UPDATE compra
+             SET estado_pago = 'pagado', fecha_verificacion = ?, verificado_por = ?, observacion = NULL
+             WHERE id_compra = ? AND estado_pago = 'por_verificar'",
+            [date('Y-m-d H:i:s'), $verificadoPor, $idCompra]
+        );
+        return $afectadas === 1;
+    }
+
+    /**
+     * Rechaza el comprobante y devuelve las unidades al inventario, porque la
+     * compra no se completó. Solo aplica a compras en revisión.
+     */
+    public static function rechazarPago(int $idCompra, string $motivo, string $verificadoPor = ''): bool
+    {
+        return (bool)self::transaccion(function () use ($idCompra, $motivo, $verificadoPor) {
+            $compra = self::one(
+                'SELECT id_compra, estado_pago FROM compra WHERE id_compra = ? FOR UPDATE',
+                [$idCompra]
+            );
+            if ($compra === null || (string)($compra['estado_pago'] ?? '') !== 'por_verificar') {
+                return false;
+            }
+            $productos = self::all(
+                'SELECT id_producto, cantidad FROM detalle_compra
+                 WHERE id_compra = ? AND id_producto IS NOT NULL',
+                [$idCompra]
+            );
+            foreach ($productos as $p) {
+                self::run(
+                    'UPDATE producto SET cantidad = cantidad + ? WHERE id_producto = ?',
+                    [(int)$p['cantidad'], (string)$p['id_producto']]
+                );
+            }
+            self::run(
+                "UPDATE compra
+                 SET estado_pago = 'rechazado', observacion = ?, fecha_verificacion = ?, verificado_por = ?
+                 WHERE id_compra = ? AND estado_pago = 'por_verificar'",
+                [mb_substr(trim($motivo), 0, 255), date('Y-m-d H:i:s'), $verificadoPor, $idCompra]
+            );
+            return true;
+        });
+    }
+
+    /** Compras del sitio con comprobante pendiente de revisión. */
+    public static function pendientesPorVerificar(int $limite = 20): array
+    {
+        return self::all(
+            "SELECT c.*, CONCAT(u.nombre, ' ', u.ap_paterno) AS cliente,
+                    m.nombre_metodoPago
+             FROM compra c
+             LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
+             LEFT JOIN metodo_pago m ON m.id_metodoPago = c.id_metodoPago
+             WHERE c.estado_pago = 'por_verificar'
+             ORDER BY c.fecha_pago ASC, c.id_compra ASC
+             LIMIT " . max(1, $limite)
+        );
+    }
+
+    public static function contarPagosPorVerificar(): int
+    {
+        return (int)self::value("SELECT COUNT(*) FROM compra WHERE estado_pago = 'por_verificar'");
+    }
+
+    /** Compras con comprobante pendiente asignadas a una sucursal concreta. */
+    public static function contarPagosPorVerificarSucursal(string $idSucursal): int
+    {
+        return (int)self::value(
+            "SELECT COUNT(*) FROM compra WHERE estado_pago = 'por_verificar' AND id_sucursal = ?",
+            [$idSucursal]
         );
     }
 

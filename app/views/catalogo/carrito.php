@@ -6,8 +6,6 @@ $total   = 0;
 foreach ($items as $i) {
     $total += (float)$i['subtotal'];
 }
-$metodosPago = $metodosPago ?? [];
-$sucursales  = $sucursales ?? [];
 $errores     = $errores ?? [];
 require __DIR__ . '/../layout/header.php';
 ?>
@@ -20,6 +18,9 @@ require __DIR__ . '/../layout/header.php';
 </div>
 
 <section class="section" style="padding-top:2.5rem">
+    <div class="container">
+        <p style="margin-bottom:1.2rem"><?= enlace_volver('catalogo', [], 'Volver al catálogo') ?></p>
+    </div>
     <div class="container cart-layout">
         <div class="card card-pad">
             <?php if ($errores): ?>
@@ -85,32 +86,12 @@ require __DIR__ . '/../layout/header.php';
             <div class="summary-row total"><span>Total</span><strong><?= bs($total) ?></strong></div>
 
             <?php if ($items): ?>
-            <form method="post" action="<?= ruta('checkout') ?>" style="margin-top:1.2rem">
-                <?= csrf() ?>
-                <div class="field">
-                    <label for="id_metodoPago">Método de pago</label>
-                    <?php if ($metodosPago): ?>
-                        <select class="input" id="id_metodoPago" name="id_metodoPago">
-                            <?php foreach ($metodosPago as $m): ?>
-                                <option value="<?= e($m['id_metodoPago']) ?>"><?= e($m['nombre_metodoPago']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    <?php else: ?>
-                        <p class="hint">No hay métodos de pago activos. Contacta al centro.</p>
-                    <?php endif; ?>
-                </div>
-                <?php if ($sucursales): ?>
-                <div class="field">
-                    <label for="sucursal_retiro">Sucursal de retiro</label>
-                    <select class="input" id="sucursal_retiro" name="sucursal_retiro">
-                        <?php foreach ($sucursales as $s): ?>
-                            <option value="<?= e($s['id_sucursal']) ?>"><?= e($s['nombre_sucursal']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <?php endif; ?>
-                <button class="btn btn-primary btn-block" type="submit" <?= $metodosPago ? '' : 'disabled' ?>>Confirmar compra</button>
-            </form>
+            <a href="<?= ruta('checkout') ?>" class="btn btn-primary btn-block" style="margin-top:1.2rem">
+                Continuar al pago
+            </a>
+            <p class="hint muted" style="text-align:center;margin-top:.6rem;font-size:.8rem">
+                Verás el QR y los datos bancarios para transferir y subir tu comprobante.
+            </p>
             <?php endif; ?>
 
             <a href="<?= ruta('catalogo') ?>" class="btn btn-outline btn-block" style="margin-top:.6rem">Seguir comprando</a>

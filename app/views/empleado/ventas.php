@@ -85,9 +85,13 @@ $hayMetodos = !empty($metodos);
             <?= vacio('Todavía no hay ventas registradas para clientas de esta sucursal.', 'cart') ?>
         <?php else: ?>
             <table class="table">
-                <thead><tr><th>Venta</th><th>Clienta</th><th>Total</th><th></th></tr></thead>
+                <thead><tr><th>Venta</th><th>Clienta</th><th>Total</th><th>Pago</th><th></th></tr></thead>
                 <tbody>
                 <?php foreach ($ventas as $v): ?>
+                    <?php
+                    $estadoPagoVenta = (string)($v['estado_pago'] ?? 'pagado');
+                    $tieneComp = trim((string)($v['comprobante'] ?? '')) !== '' || (string)($v['comprobante_datos'] ?? '') !== '';
+                    ?>
                     <tr>
                         <td>
                             <b><?= e($v['nro_compra'] ?? '#' . $v['id_compra']) ?></b><br>
@@ -98,8 +102,29 @@ $hayMetodos = !empty($metodos);
                             <small class="muted"><?= e($v['nombre_metodoPago'] ?? 'Por definir') ?></small>
                         </td>
                         <td><b><?= bs($v['total_pagar']) ?></b></td>
+                        <td><?= estado_pago($estadoPagoVenta) ?></td>
                         <td>
-                            <a class="ic-btn" href="<?= ruta('empleado_comprobante', ['id' => $v['id_compra']]) ?>" title="Ver comprobante"><?= icon('eye', 16) ?></a>
+                            <div class="acts">
+                                <a class="ic-btn" href="<?= ruta('empleado_comprobante', ['id' => $v['id_compra']]) ?>" title="Ver detalle"><?= icon('eye', 16) ?></a>
+                                <?php if ($tieneComp): ?>
+                                    <a class="ic-btn" href="<?= ruta('comprobante_compra', ['id' => $v['id_compra']]) ?>" target="_blank" rel="noopener" title="Ver comprobante"><?= icon('file', 16) ?></a>
+                                <?php endif; ?>
+                                <?php if ($estadoPagoVenta === 'por_verificar'): ?>
+                                    <form method="post" action="<?= ruta('empleado_ventas') ?>" style="display:inline" data-confirm="¿Confirmar el pago de esta compra?">
+                                        <?= csrf() ?>
+                                        <input type="hidden" name="accion" value="pago_confirmar">
+                                        <input type="hidden" name="id_compra" value="<?= (int)$v['id_compra'] ?>">
+                                        <button class="ic-btn ok" type="submit" title="Confirmar pago"><?= icon('check', 16) ?></button>
+                                    </form>
+                                    <form method="post" action="<?= ruta('empleado_ventas') ?>" style="display:inline" data-confirm="¿Rechazar el comprobante? Las unidades volverán al inventario.">
+                                        <?= csrf() ?>
+                                        <input type="hidden" name="accion" value="pago_rechazar">
+                                        <input type="hidden" name="id_compra" value="<?= (int)$v['id_compra'] ?>">
+                                        <input type="hidden" name="motivo" value="Comprobante rechazado por el personal.">
+                                        <button class="ic-btn del" type="submit" title="Rechazar comprobante"><?= icon('trash', 16) ?></button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Flash;
+use App\Core\Upload;
 use App\Models\Compra;
 use App\Models\MetodoPago;
 use App\Models\Producto;
@@ -129,11 +130,9 @@ final class CatalogoController extends Controller
     public function carrito(): void
     {
         $items = $this->itemsDesdeSesion();
-        $metodosPago = MetodoPago::activos();
-        $sucursales = Sucursal::todas();
         $errores = $_SESSION['carrito_errores'] ?? [];
         unset($_SESSION['carrito_errores']);
-        $this->vista('catalogo/carrito.php', compact('items', 'metodosPago', 'sucursales', 'errores'));
+        $this->vista('catalogo/carrito.php', compact('items', 'errores'));
     }
 
     /** Reconstruye el carrito desde MySQL (precio, stock, nombre e imagen reales). */
@@ -181,44 +180,96 @@ final class CatalogoController extends Controller
         return $items;
     }
 
+    /**
+     * Paso de pago de productos: muestra el QR/datos bancarios y recibe el
+     * comprobante. La compra se crea recién cuando el comprobante es válido,
+     * para no descontar stock de carritos abandonados.
+     */
     public function checkout(): void
     {
-        if (!$this->esPost()) {
-            $this->redirigir('carrito');
-        }
-        $carrito = array_values($_SESSION['carrito'] ?? []);
-        if ($carrito === []) {
+        $items = $this->itemsDesdeSesion();
+        if ($items === []) {
             Flash::error('Tu carrito está vacío.');
             $this->redirigir('catalogo');
         }
+
+        $total = 0.0;
+        foreach ($items as $item) {
+            $total += (float)$item['subtotal'];
+        }
+        $total = round($total, 2);
+
+        $metodosPago = MetodoPago::activos();
+        $digitales = array_values(array_filter(
+            $metodosPago,
+            static fn (array $m): bool => (string)$m['id_metodoPago'] !== 'MP01'
+        ));
+        $sucursales = Sucursal::todas();
+
         $idMetodo = $this->texto('id_metodoPago');
-        if ($idMetodo !== '' && !MetodoPago::esActivo($idMetodo)) {
-            Flash::error('Selecciona un método de pago válido.');
-            $this->redirigir('carrito');
+        if ($idMetodo === '' && $digitales !== []) {
+            $idMetodo = (string)$digitales[0]['id_metodoPago'];
+        }
+        $idSucursal = $this->texto('sucursal_retiro');
+        if ($idSucursal === '' && $sucursales !== []) {
+            $idSucursal = (string)$sucursales[0]['id_sucursal'];
         }
 
-        foreach ($carrito as $item) {
-            $stock = Producto::stock((string)$item['id']);
-            if ($stock < (int)$item['cantidad']) {
-                Flash::error('El stock de ' . $item['nombre'] . ' cambió (quedan ' . $stock . '). Revisa tu carrito.');
-                $this->redirigir('carrito');
+        $errores = [];
+        if ($this->esPost()) {
+            if ($idMetodo === '' || $idMetodo === 'MP01' || !MetodoPago::esActivo($idMetodo)) {
+                $errores['id_metodoPago'][] = 'Selecciona un método de pago digital válido.';
+            }
+            if ($idSucursal === '' || Sucursal::porId($idSucursal) === null) {
+                $errores['sucursal_retiro'][] = 'Selecciona la sucursal donde retirarás tu pedido.';
+            }
+            if (empty($_FILES['comprobante']['name'] ?? '')) {
+                $errores['comprobante'][] = 'Adjunta la captura de tu pago.';
+            }
+
+            if (!$errores) {
+                $errorUp = null;
+                $archivo = Upload::imagenConDatos(
+                    $_FILES['comprobante'],
+                    'uploads/comprobantes/cmp_' . Auth::id() . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(3)),
+                    $errorUp
+                );
+                if ($archivo === null) {
+                    $errores['comprobante'][] = $errorUp ?? 'No se pudo guardar el comprobante.';
+                } else {
+                    try {
+                        $compra = Compra::crear(
+                            Auth::id(),
+                            $idMetodo,
+                            $items,
+                            $idSucursal,
+                            'por_verificar',
+                            $archivo
+                        );
+                        unset($_SESSION['carrito']);
+                        Flash::ok('Comprobante enviado. El personal verificará tu pago antes de entregar el pedido.');
+                        $this->redirigir('detalle_compra', ['id' => $compra['id']]);
+                    } catch (\RuntimeException | \DomainException $e) {
+                        @unlink(BASE_PATH . '/public/' . ltrim((string)$archivo['ruta'], '/'));
+                        error_log('[CHECKOUT] ' . $e->getMessage());
+                        $errores['_general'][] = $e->getMessage();
+                    } catch (\Throwable $e) {
+                        @unlink(BASE_PATH . '/public/' . ltrim((string)$archivo['ruta'], '/'));
+                        error_log('[CHECKOUT] ' . $e->getMessage());
+                        $errores['_general'][] = 'No se pudo procesar la compra. Intenta nuevamente.';
+                    }
+                }
             }
         }
 
-        try {
-            $compra = Compra::crear(Auth::id(), $idMetodo !== '' ? $idMetodo : null, $carrito);
-        } catch (\RuntimeException | \DomainException $e) {
-            error_log('[CHECKOUT] ' . $e->getMessage());
-            Flash::error($e->getMessage());
-            $this->redirigir('carrito');
-        } catch (\Throwable $e) {
-            error_log('[CHECKOUT] ' . $e->getMessage());
-            Flash::error('No se pudo procesar la compra. Intenta nuevamente.');
-            $this->redirigir('carrito');
-        }
-
-        unset($_SESSION['carrito']);
-        Flash::ok('¡Compra registrada! N° ' . $compra['nro'] . ' por ' . bs($compra['total']) . '.');
-        $this->redirigir('detalle_compra', ['id' => $compra['id']]);
+        $this->vista('catalogo/pago.php', [
+            'items'       => $items,
+            'total'       => $total,
+            'digitales'   => $digitales,
+            'sucursales'  => $sucursales,
+            'errores'     => $errores,
+            'idMetodo'    => $idMetodo,
+            'idSucursal'  => $idSucursal,
+        ]);
     }
 }

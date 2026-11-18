@@ -44,6 +44,39 @@ require __DIR__ . '/../layout/header.php';
                 </div>
             </div>
 
+            <?php
+            $estadoPagoCompra = (string)($compra['estado_pago'] ?? 'pagado');
+            $tieneComprobante = trim((string)($compra['comprobante'] ?? '')) !== ''
+                || (string)($compra['comprobante_datos'] ?? '') !== '';
+            ?>
+            <div class="recibo-total" style="text-align:left;margin-top:1.2rem">
+                <div class="row"><span>Estado del pago</span><span><?= estado_pago($estadoPagoCompra) ?></span></div>
+                <?php if (!empty($compra['codigo_pago'])): ?>
+                    <div class="row"><span>Código de pago</span><span><?= e($compra['codigo_pago']) ?></span></div>
+                <?php endif; ?>
+                <?php if ($tieneComprobante): ?>
+                    <div class="row">
+                        <span>Comprobante</span>
+                        <span><a class="link" href="<?= ruta('comprobante_compra', ['id' => $compra['id_compra']]) ?>" target="_blank" rel="noopener"><?= icon('file', 15) ?> Ver comprobante</a></span>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($compra['observacion'])): ?>
+                    <div class="row"><span>Observación</span><span><?= e($compra['observacion']) ?></span></div>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($estadoPagoCompra === 'por_verificar'): ?>
+                <div class="alert info" style="margin-top:1rem">
+                    <?= icon('clock', 18) ?>
+                    <span>Tu comprobante está en revisión. El pedido se prepara cuando el personal confirme el pago.</span>
+                </div>
+            <?php elseif ($estadoPagoCompra === 'rechazado'): ?>
+                <div class="alert warn" style="margin-top:1rem">
+                    <?= icon('shield', 18) ?>
+                    <span>El comprobante de esta compra fue rechazado. Contacta al centro para regularizar el pago.</span>
+                </div>
+            <?php endif; ?>
+
             <?php if (empty($items)): ?>
                 <?= vacio('Esta compra no tiene ítems registrados.', 'box') ?>
             <?php else: ?>
@@ -101,6 +134,7 @@ require __DIR__ . '/../layout/header.php';
 
             <div style="display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap">
                 <button class="btn btn-outline" onclick="window.print()"><?= icon('print', 18) ?> Imprimir comprobante</button>
+                <a href="<?= $volverRuta ?>" class="btn btn-outline"><?= icon('arrow-left', 16) ?> <?= e($volverTexto) ?></a>
                 <a href="<?= $seguirRuta ?>" class="btn btn-outline"><?= e($seguirTexto) ?></a>
             </div>
         </div>
