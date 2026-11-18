@@ -40,10 +40,11 @@ Abra el **XAMPP Control Panel** y presione **Start** en **Apache** y en **MySQL*
 
 ### 4. Importar la base de datos
 1. Abra [http://localhost/phpmyadmin/](http://localhost/phpmyadmin/).
-2. Sin seleccionar ninguna base de datos, haga clic en la pestaña **Importar**.
-3. En *Archivo a importar* presione **Seleccionar archivo** y elija:
+2. Crea un base de datos, llamada "tatiana_skins_and_beauty_corregida"
+3. Selecciona la base de datos "tatiana_skins_and_beauty_corregida",  y haga clic en la pestaña **Importar**.
+4. En *Archivo a importar* presione **Seleccionar archivo** y elija:
    `C:\xampp\htdocs\tatiana_skins_and_beauty\tatiana_skins_and_beauty_corregida.sql`
-4. Deje las demás opciones como están y presione **Importar** (abajo). Debe aparecer el mensaje *"La importación se ejecutó exitosamente"* y la base de datos en el panel izquierdo.
+5. Deje las demás opciones como están y presione **Importar** (abajo). Debe aparecer el mensaje *"La importación se ejecutó exitosamente"* y la base de datos en el panel izquierdo.
 
 *Alternativa por consola:*
 ```bash
