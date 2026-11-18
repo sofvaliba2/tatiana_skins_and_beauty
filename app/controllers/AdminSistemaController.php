@@ -195,10 +195,13 @@ final class AdminSistemaController extends Controller
         $porProducto = Reporte::porProducto($desde, $hasta);
         $porServicio = Reporte::porServicio($desde, $hasta);
         $topClientes = Reporte::topClientes($desde, $hasta);
+        $serie = Reporte::serie($desde, $hasta);
+        $porMetodo = Reporte::porMetodoPago($desde, $hasta);
         $anios = $this->aniosReportes();
 
         $this->vista('admin/reportes.php', compact(
-            'desde', 'hasta', 'mes', 'anio', 'anios', 'resumen', 'reservas', 'porProducto', 'porServicio', 'topClientes'
+            'desde', 'hasta', 'mes', 'anio', 'anios', 'resumen', 'reservas',
+            'porProducto', 'porServicio', 'topClientes', 'serie', 'porMetodo'
         ));
     }
 

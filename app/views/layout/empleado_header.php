@@ -99,3 +99,6 @@ function emp_item_menu(string $vista, string $icono, string $texto, string $acti
         </div>
         <div class="content">
             <?= flashes() ?>
+            <?php if ($activo !== '' && !in_array($activo, ['empleado_dashboard', 'empleado_perfil'], true)): ?>
+                <p class="muted" style="margin-bottom:1rem;font-size:.9rem"><?= enlace_volver('empleado_dashboard', [], 'Volver al inicio') ?></p>
+            <?php endif; ?>

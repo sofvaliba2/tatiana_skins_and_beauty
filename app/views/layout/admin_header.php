@@ -91,4 +91,7 @@ $rolTexto = ($u['id_rol'] ?? '') === 'ROL01' ? 'Administrador' : 'Personal';
         </div>
         <div class="content">
             <?= flashes() ?>
+            <?php if ($activo !== '' && !in_array($activo, ['admin_dashboard', 'admin_perfil', 'admin_promociones'], true)): ?>
+                <p class="muted" style="margin-bottom:1rem;font-size:.9rem"><?= enlace_volver('admin_dashboard', [], 'Volver al panel') ?></p>
+            <?php endif; ?>
 

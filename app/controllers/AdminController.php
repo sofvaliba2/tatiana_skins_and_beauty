@@ -183,10 +183,20 @@ final class AdminController extends Controller
             $this->guardarProducto();
         }
 
+        $editar = null;
+        $idEditar = $this->texto('editar');
+        if ($idEditar !== '') {
+            $editar = Producto::porId($idEditar);
+            if ($editar === null) {
+                Flash::error('El producto que intentas editar no existe.');
+                $this->redirigir('admin_inventario', array_filter(['q' => $q]));
+            }
+        }
+
         ['filas' => $productos, 'total' => $total] = Producto::buscar($q, '', $pagina, self::POR_PAGINA);
         $categorias = Producto::categorias();
 
-        $this->vista('admin/inventario.php', compact('productos', 'categorias', 'q', 'pagina', 'total'));
+        $this->vista('admin/inventario.php', compact('productos', 'categorias', 'q', 'pagina', 'total', 'editar'));
     }
 
     private function guardarProducto(): void

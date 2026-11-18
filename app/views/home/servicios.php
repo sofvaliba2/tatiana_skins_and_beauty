@@ -14,6 +14,7 @@ require __DIR__ . '/../layout/header.php';
 
 <section class="section">
     <div class="container">
+        <p style="margin-bottom:1.2rem"><?= enlace_volver('home', [], 'Volver al inicio') ?></p>
         <div class="tabs" style="margin-bottom:2rem">
             <a class="tab active" href="#">Todos</a>
             <?php foreach (($categorias ?? []) as $c): ?>

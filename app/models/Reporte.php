@@ -71,6 +71,81 @@ final class Reporte extends Model
         );
     }
 
+    /**
+     * Serie temporal para los gráficos: ingresos/compras y reservas por día.
+     * Si el rango supera 62 días se agrupa por mes para que el gráfico sea legible.
+     *
+     * @return array{etiquetas:array<int,string>,compras:array<int,int>,montos:array<int,float>,reservas:array<int,int>,por_mes:bool}
+     */
+    public static function serie(string $desde, string $hasta): array
+    {
+        $inicio = new \DateTimeImmutable($desde);
+        $fin = new \DateTimeImmutable($hasta);
+        $dias = (int)$inicio->diff($fin)->days + 1;
+        $porMes = $dias > 62;
+        $formato = $porMes ? '%Y-%m' : '%Y-%m-%d';
+
+        $compras = self::all(
+            "SELECT DATE_FORMAT(fecha_compra, '" . $formato . "') AS periodo,
+                    COUNT(*) AS compras, COALESCE(SUM(total_pagar),0) AS monto
+             FROM compra WHERE fecha_compra BETWEEN ? AND ?
+             GROUP BY periodo ORDER BY periodo",
+            [$desde, $hasta]
+        );
+        $reservas = self::all(
+            "SELECT DATE_FORMAT(fecha, '" . $formato . "') AS periodo, COUNT(*) AS reservas
+             FROM reserva WHERE fecha BETWEEN ? AND ? AND estado <> 'cancelada'
+             GROUP BY periodo ORDER BY periodo",
+            [$desde, $hasta]
+        );
+
+        $idxCompras = [];
+        foreach ($compras as $c) {
+            $idxCompras[(string)$c['periodo']] = $c;
+        }
+        $idxReservas = [];
+        foreach ($reservas as $r) {
+            $idxReservas[(string)$r['periodo']] = (int)$r['reservas'];
+        }
+
+        $meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        $etiquetas = $cantidades = $montos = $citas = [];
+        $cursor = $porMes ? $inicio->modify('first day of this month') : $inicio;
+        while ($cursor <= $fin) {
+            $clave = $cursor->format($porMes ? 'Y-m' : 'Y-m-d');
+            $etiquetas[] = $porMes
+                ? $meses[(int)$cursor->format('n') - 1] . ' ' . $cursor->format('y')
+                : $cursor->format('d/m');
+            $cantidades[] = (int)($idxCompras[$clave]['compras'] ?? 0);
+            $montos[] = (float)($idxCompras[$clave]['monto'] ?? 0);
+            $citas[] = (int)($idxReservas[$clave] ?? 0);
+            $cursor = $cursor->modify($porMes ? 'first day of next month' : '+1 day');
+        }
+
+        return [
+            'etiquetas' => $etiquetas,
+            'compras'   => $cantidades,
+            'montos'    => $montos,
+            'reservas'  => $citas,
+            'por_mes'   => $porMes,
+        ];
+    }
+
+    /** Distribución de las ventas de productos por método de pago. */
+    public static function porMetodoPago(string $desde, string $hasta): array
+    {
+        return self::all(
+            "SELECT COALESCE(m.nombre_metodoPago, 'Sin método') AS nombre,
+                    COUNT(*) AS compras, COALESCE(SUM(c.total_pagar),0) AS total
+             FROM compra c
+             LEFT JOIN metodo_pago m ON m.id_metodoPago = c.id_metodoPago
+             WHERE c.fecha_compra BETWEEN ? AND ?
+             GROUP BY c.id_metodoPago, m.nombre_metodoPago
+             ORDER BY total DESC",
+            [$desde, $hasta]
+        );
+    }
+
     public static function comprasDetalle(string $desde, string $hasta): array
     {
         return self::all(

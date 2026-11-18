@@ -17,6 +17,7 @@ foreach (($sucursales ?? []) as $h) {
 ?>
 <section class="section">
     <div class="container">
+        <p style="margin-bottom:1.2rem"><?= enlace_volver('home', [], 'Volver al inicio') ?></p>
         <div class="section-head">
             <span class="eyebrow">Estamos para ayudarte</span>
             <h2>Preguntas frecuentes</h2>
