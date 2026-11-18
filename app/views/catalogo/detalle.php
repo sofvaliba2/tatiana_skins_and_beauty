@@ -17,9 +17,9 @@ require __DIR__ . '/../layout/header.php';
 
         <div style="display:grid;grid-template-columns:minmax(240px,380px) 1fr;gap:2.5rem;align-items:start" class="detalle-grid">
             <div class="card" style="padding:2rem;text-align:center">
-                <div class="producto-img" style="height:240px;display:flex;align-items:center;justify-content:center">
+                <div class="producto-img" style="height:240px;width:100%;display:flex;align-items:center;justify-content:center">
                     <?php if (!empty($producto['imagen_url']) && is_file(BASE_PATH . '/public/' . $producto['imagen_url'])): ?>
-                        <img src="<?= BASE_URL . '/' . e($producto['imagen_url']) ?>" alt="<?= e($producto['nombre_producto']) ?>" style="max-height:100%;border-radius:12px">
+                        <img class="ajustar" src="<?= BASE_URL . '/' . e($producto['imagen_url']) ?>" alt="<?= e($producto['nombre_producto']) ?>">
                     <?php else: ?>
                         <?= frasco() ?>
                     <?php endif; ?>

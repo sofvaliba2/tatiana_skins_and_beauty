@@ -39,7 +39,7 @@ require __DIR__ . '/../layout/header.php';
             <article class="card">
                 <div class="producto-img">
                     <?php if (!empty($p['imagen_url']) && is_file(BASE_PATH . '/public/' . $p['imagen_url'])): ?>
-                        <img src="<?= BASE_URL . '/' . e($p['imagen_url']) ?>" alt="<?= e($p['nombre_producto']) ?>" style="max-height:100%;border-radius:12px">
+                        <img src="<?= BASE_URL . '/' . e($p['imagen_url']) ?>" alt="<?= e($p['nombre_producto']) ?>">
                     <?php else: ?>
                         <?= frasco() ?>
                     <?php endif; ?>
