@@ -45,6 +45,7 @@ final class EmpleadoController extends Controller
         $totalCitasHoy = Reserva::contarDelDiaSucursal($hoy, $ctx['id']);
         $totalProximas = Reserva::contarProximasSucursal($ctx['id'], $hoy);
         $totalClientes = Usuario::contarClientesDeSucursal($ctx['id']);
+        $pagosPendientes = Reserva::pendientesPagoDeSucursal($ctx['id']);
 
         $this->vistaEmpleado('empleado/dashboard.php', $ctx, compact(
             'citasHoy',
@@ -53,6 +54,7 @@ final class EmpleadoController extends Controller
             'totalCitasHoy',
             'totalProximas',
             'totalClientes',
+            'pagosPendientes',
             'hoy'
         ));
     }

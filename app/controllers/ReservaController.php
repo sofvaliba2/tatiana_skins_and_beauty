@@ -199,16 +199,16 @@ final class ReservaController extends Controller
 
             if (!$errores) {
                 $errorUp = null;
-                $ruta = Upload::imagen(
+                $archivo = Upload::imagenConDatos(
                     $_FILES['comprobante'],
                     'uploads/comprobantes/res_' . $idReserva . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(3)),
                     $errorUp
                 );
-                if ($ruta === null) {
+                if ($archivo === null) {
                     $errores['comprobante'][] = $errorUp ?? 'No se pudo guardar el comprobante.';
                 } else {
                     try {
-                        Reserva::registrarComprobante($idReserva, $ruta, $idMetodo);
+                        Reserva::registrarComprobante($idReserva, $archivo['ruta'], $idMetodo, $archivo);
                         Flash::ok('Comprobante enviado. El personal verificará tu anticipo y confirmará la cita.');
                         $this->redirigir('reserva_recibo', ['id' => $idReserva]);
                     } catch (\DomainException $e) {
@@ -360,7 +360,15 @@ final class ReservaController extends Controller
             'resumen'      => $resumen,
             'recomendados' => $recomendados,
             'respuestas'   => $respuestas,
+            'comprobanteEnBd' => $this->comprobanteEnBd($idReserva),
         ]);
+    }
+
+    /** Indica si la reserva tiene el comprobante guardado dentro de MySQL. */
+    private function comprobanteEnBd(int $idReserva): bool
+    {
+        $comprobante = Reserva::comprobantePago($idReserva);
+        return $comprobante !== null && is_string($comprobante['datos'] ?? null) && $comprobante['datos'] !== '';
     }
 
     public function misReservas(): void
@@ -412,6 +420,86 @@ final class ReservaController extends Controller
         }
         unset($p);
         $this->vista('reserva/recomendaciones.php', ['recomendados' => $recomendados, 'historial' => $historial, 'objetivo' => $objetivo]);
+    }
+
+    /**
+     * Sirve el comprobante de pago de una reserva directamente desde MySQL.
+     * Si el comprobante solo existe como archivo en disco, se envía el archivo.
+     *
+     * Permisos: el admin ve todo; el empleado solo su sucursal; el cliente
+     * únicamente sus propias reservas.
+     */
+    public function comprobantePago(): void
+    {
+        $idReserva = $this->entero('id');
+        $reserva = $idReserva > 0 ? Reserva::porId($idReserva) : null;
+        if ($reserva === null) {
+            (new ErroresController())->noEncontrado();
+            return;
+        }
+
+        $u = Auth::usuario() ?? [];
+        $rol = (string)($u['id_rol'] ?? '');
+        if ($rol === 'ROL02') {
+            $sucursal = (string)($u['sucursal'] ?? '');
+            if ($sucursal === '' || (string)($reserva['id_sucursal'] ?? '') !== $sucursal) {
+                (new ErroresController())->denegado();
+                return;
+            }
+        } elseif ($rol === 'ROL03') {
+            if ((string)($reserva['id_usuario'] ?? '') !== (string)($u['id'] ?? '')) {
+                (new ErroresController())->denegado();
+                return;
+            }
+        } elseif ($rol !== 'ROL01') {
+            (new ErroresController())->denegado();
+            return;
+        }
+
+        $comprobante = Reserva::comprobantePago($idReserva);
+        if ($comprobante === null) {
+            (new ErroresController())->noEncontrado();
+            return;
+        }
+
+        $datos = $comprobante['datos'] ?? null;
+        if (is_string($datos) && $datos !== '') {
+            $tipo = trim((string)($comprobante['tipo'] ?? ''));
+            if ($tipo === '' || !str_starts_with($tipo, 'image/')) {
+                $tipo = 'application/octet-stream';
+            }
+            $nombre = trim((string)($comprobante['nombre'] ?? ''));
+            if ($nombre === '') {
+                $nombre = 'comprobante-' . $idReserva;
+            }
+            header('Content-Type: ' . $tipo);
+            header('Content-Length: ' . strlen($datos));
+            header('Content-Disposition: inline; filename="' . rawurlencode($nombre) . '"');
+            header('X-Content-Type-Options: nosniff');
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            echo $datos;
+            exit;
+        }
+
+        $ruta = trim((string)($comprobante['ruta'] ?? ''));
+        $ruta = ltrim(str_replace('\\', '/', $ruta), '/');
+        if (str_starts_with($ruta, 'public/')) {
+            $ruta = substr($ruta, 7);
+        }
+        $absoluta = BASE_PATH . '/public/' . $ruta;
+        if ($ruta === '' || !is_file($absoluta)) {
+            (new ErroresController())->noEncontrado();
+            return;
+        }
+
+        $tipo = (new \finfo(FILEINFO_MIME_TYPE))->file($absoluta) ?: 'application/octet-stream';
+        header('Content-Type: ' . $tipo);
+        header('Content-Length: ' . (string)filesize($absoluta));
+        header('Content-Disposition: inline; filename="' . rawurlencode(basename($absoluta)) . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        readfile($absoluta);
+        exit;
     }
 
     private function reservaActual(): int

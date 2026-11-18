@@ -18,7 +18,7 @@ abstract class Controller
 
     private function avisos(): array
     {
-        $avisos = ['avisos_cliente' => 0, 'avisos_admin' => 0];
+        $avisos = ['avisos_cliente' => 0, 'avisos_admin' => 0, 'avisos_pagos' => 0];
         $u = Auth::usuario();
         if ($u === null) {
             return $avisos;
@@ -30,8 +30,12 @@ abstract class Controller
                 $avisos['avisos_admin'] = $sucursal !== ''
                     ? Reserva::contarPendientesSucursal($sucursal)
                     : 0;
+                $avisos['avisos_pagos'] = $sucursal !== ''
+                    ? Reserva::contarPagosPorVerificarSucursal($sucursal)
+                    : 0;
             } elseif (Auth::esAdmin()) {
                 $avisos['avisos_admin'] = Reserva::contarPendientes();
+                $avisos['avisos_pagos'] = Reserva::contarPagosPorVerificar();
             }
         } catch (\Throwable $e) {
         }

@@ -245,6 +245,7 @@ Datos de prueba eliminados y stock de `PROD01` restaurado a 5.
 |---|---|---|
 | Administrador | `admin.test@test.bo` | `186c9075` |
 | Cliente | `quispeliz143@gmail.com` | `12345678` |
+| Empleado (SUC01) | `empleado@empleado.com` | `12345678` |
 
 > Son las credenciales incluidas en el volcado
 > `database/tatiana_skins_and_beauty_corregida.sql`. Cambiarlas antes de
@@ -262,3 +263,81 @@ Datos de prueba eliminados y stock de `PROD01` restaurado a 5.
 4. **Respaldos**: programar copias de la BD y de `public/uploads/comprobantes`.
 5. **Pasarela**: si se desea confirmación automática de pagos, integrar la API
    del proveedor QR; hoy la confirmación es manual y auditada.
+
+---
+
+## 10. Actualización: comprobantes en MySQL, categorías y sesiones
+
+Fecha: 18/11/2026 · Base: `tatiana_skins_and_beauty_corregida`
+
+### 10.1 Comprobantes guardados en la base de datos
+
+- La tabla `pago_reserva` ahora guarda la imagen del comprobante dentro de MySQL:
+  - `comprobante_nombre` (nombre original del archivo),
+  - `comprobante_tipo` (MIME real, p. ej. `image/jpeg`),
+  - `comprobante_datos` (`LONGBLOB` con la imagen).
+- Se mantiene la copia en `public/uploads/comprobantes/` como respaldo, pero la
+  vista ya no depende de que el archivo siga en disco.
+- `Upload::imagenConDatos()` valida MIME/tamaño y devuelve ruta, nombre, tipo y
+  datos binarios en una sola operación.
+- `Reserva::registrarComprobante()` acepta los datos del archivo y guarda el
+  BLOB junto con el registro de auditoría.
+- Nueva ruta compartida `comprobante_pago` (`ReservaController::comprobantePago`)
+  que sirve la imagen desde MySQL y, si no existe, recurre al archivo en disco:
+  - **Administrador:** cualquier reserva.
+  - **Empleado:** solo reservas de su sucursal.
+  - **Cliente:** solo sus propias reservas.
+- Migración: `database/migration_comprobantes_bd.sql`.
+
+### 10.2 Avisos y visualización para el empleado
+
+- `empleado/dashboard.php` incluye el panel **“Comprobantes de pago por
+  verificar”** con clienta, anticipo, enlace al comprobante y acceso a la agenda.
+- La campana de `empleado_header.php` muestra el número de comprobantes
+  pendientes de su sucursal y enlaza al panel.
+- `empleado/citas.php` agrega la columna **Pago** con estado y enlace al
+  comprobante.
+- `admin/citas.php`, `admin/notificaciones.php` y `reserva/recibo.php` usan la
+  nueva ruta, de modo que el enlace funciona aunque el archivo se haya borrado.
+
+### 10.3 Categorías de servicios al día
+
+| ID | Categoría |
+|---|---|
+| CS01 | Depilaciones |
+| CS02 | Faciales |
+| CS03 | Corporales |
+
+Asignación actual: `SERV01 Hidrafacial → CS02 Faciales`; `SERV02`, `SERV03` y
+`SERV04` (depilaciones) `→ CS01 Depilaciones`.
+
+### 10.4 Sesiones simultáneas por navegador
+
+- La sesión usa la cookie propia `TATIANA_SESSID`, por lo que cada navegador
+  (Chrome, Edge, Firefox) mantiene una sesión independiente.
+- Verificado con tres sesiones simultáneas: administrador, empleado y cliente
+  en paralelo, cada una con su propio panel y permisos.
+- También se confirmó que un rol no puede abrir el panel de otro (403).
+
+### 10.5 Verificación de esta actualización
+
+- Subida real de un comprobante JPG (95 121 bytes) por el cliente.
+- BLOB almacenado en `pago_reserva.comprobante_datos` con el mismo tamaño.
+- `comprobante_pago` respondió `200 image/jpeg` para admin, empleado de la
+  sucursal y cliente dueño; `403` para un empleado de otra sucursal.
+- Paneles de admin y empleado muestran el enlace al comprobante.
+- Smoke test de 30 páginas por rol: todas responden `200` (la única excepción
+  es `empleado_disponibilidad`, endpoint AJAX que exige parámetros).
+- `php -l` sin errores y `storage/logs/php_error.log` vacío.
+
+### 10.6 Credenciales de prueba actualizadas
+
+| Rol | Correo | Contraseña |
+|---|---|---|
+| Administrador | `admin.test@test.bo` | `186c9075` |
+| Cliente | `quispeliz143@gmail.com` | `12345678` |
+| Empleado (SUC01) | `empleado@empleado.com` | `12345678` |
+
+> El correo `empleado.test@test.bo` que figuraba en el README no existía en la
+> base de datos; la cuenta real es `empleado@empleado.com` (usuario `EMP001`,
+> sucursal `SUC01 SOPOCACHI`).

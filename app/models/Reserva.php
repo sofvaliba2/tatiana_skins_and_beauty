@@ -438,6 +438,9 @@ final class Reserva extends Model
                          ORDER BY p.id_pago DESC LIMIT 1),
                         r.comprobante
                     ) AS comprobante_actual,
+                    (SELECT p.comprobante_datos IS NOT NULL FROM pago_reserva p
+                     WHERE p.id_reserva = r.id_reserva AND p.comprobante_datos IS NOT NULL
+                     ORDER BY p.id_pago DESC LIMIT 1) AS comprobante_en_bd,
                     COALESCE(
                         (SELECT p.codigo FROM pago_reserva p
                          WHERE p.id_reserva = r.id_reserva AND p.codigo IS NOT NULL
@@ -449,6 +452,49 @@ final class Reserva extends Model
              LEFT JOIN sucursal s ON s.id_sucursal = r.id_sucursal
              WHERE r.estado_pago = 'por_verificar'
              ORDER BY r.fecha, r.hora"
+        );
+    }
+
+    /** Comprobantes por verificar de una sucursal concreta (panel del empleado). */
+    public static function pendientesPagoDeSucursal(string $idSucursal): array
+    {
+        return self::all(
+            "SELECT r.id_reserva, r.fecha, r.hora, r.precio_total, r.anticipo, r.comprobante,
+                    CONCAT(u.nombre, ' ', u.ap_paterno) AS cliente, u.telefono,
+                    s.nombre_sucursal,
+                    COALESCE(
+                        (SELECT p.comprobante FROM pago_reserva p
+                         WHERE p.id_reserva = r.id_reserva AND p.comprobante IS NOT NULL
+                         ORDER BY p.id_pago DESC LIMIT 1),
+                        r.comprobante
+                    ) AS comprobante_actual,
+                    (SELECT p.comprobante_datos IS NOT NULL FROM pago_reserva p
+                     WHERE p.id_reserva = r.id_reserva AND p.comprobante_datos IS NOT NULL
+                     ORDER BY p.id_pago DESC LIMIT 1) AS comprobante_en_bd
+             FROM reserva r
+             JOIN usuario u ON u.id_usuario = r.id_usuario
+             LEFT JOIN sucursal s ON s.id_sucursal = r.id_sucursal
+             WHERE r.estado_pago = 'por_verificar' AND r.id_sucursal = ?
+             ORDER BY r.fecha, r.hora",
+            [$idSucursal]
+        );
+    }
+
+    /** Cantidad de comprobantes pendientes de verificar en una sucursal. */
+    public static function contarPagosPorVerificarSucursal(string $idSucursal): int
+    {
+        return (int)self::value(
+            "SELECT COUNT(*) FROM reserva
+             WHERE estado_pago = 'por_verificar' AND id_sucursal = ?",
+            [$idSucursal]
+        );
+    }
+
+    /** Cantidad total de comprobantes pendientes de verificar. */
+    public static function contarPagosPorVerificar(): int
+    {
+        return (int)self::value(
+            "SELECT COUNT(*) FROM reserva WHERE estado_pago = 'por_verificar'"
         );
     }
 
@@ -464,6 +510,9 @@ final class Reserva extends Model
                        (SELECT p.comprobante FROM pago_reserva p
                         WHERE p.id_reserva = r.id_reserva AND p.comprobante IS NOT NULL
                         ORDER BY p.id_pago DESC LIMIT 1) AS comprobante_pago,
+                       (SELECT p.comprobante_datos IS NOT NULL FROM pago_reserva p
+                        WHERE p.id_reserva = r.id_reserva AND p.comprobante_datos IS NOT NULL
+                        ORDER BY p.id_pago DESC LIMIT 1) AS comprobante_en_bd,
                        (SELECT p.codigo FROM pago_reserva p
                         WHERE p.id_reserva = r.id_reserva AND p.codigo IS NOT NULL
                         ORDER BY p.id_pago DESC LIMIT 1) AS codigo_pago_actual
@@ -646,8 +695,11 @@ final class Reserva extends Model
     /**
      * Registra el comprobante enviado por el cliente. El monto del pago se toma
      * del anticipo guardado en la reserva; no se acepta un monto del formulario.
+     *
+     * @param array{ruta?:string,nombre?:string,tipo?:string,datos?:string} $archivo
+     *        Datos de la imagen para guardarla también dentro de MySQL.
      */
-    public static function registrarComprobante(int $idReserva, string $rutaComprobante, string $idMetodo): string
+    public static function registrarComprobante(int $idReserva, string $rutaComprobante, string $idMetodo, array $archivo = []): string
     {
         $reserva = self::porId($idReserva);
         if ($reserva === null) {
@@ -666,7 +718,15 @@ final class Reserva extends Model
             ? (string)$reserva['codigo_pago']
             : self::generarCodigoPago();
 
-        return (string)self::transaccion(function () use ($idReserva, $rutaComprobante, $idMetodo, $anticipo, $codigo) {
+        $nombreArchivo = trim((string)($archivo['nombre'] ?? ''));
+        $tipoArchivo = trim((string)($archivo['tipo'] ?? ''));
+        $datosArchivo = $archivo['datos'] ?? null;
+        $conDatos = is_string($datosArchivo) && $datosArchivo !== '';
+
+        return (string)self::transaccion(function () use (
+            $idReserva, $rutaComprobante, $idMetodo, $anticipo, $codigo,
+            $conDatos, $nombreArchivo, $tipoArchivo, $datosArchivo
+        ) {
             self::run(
                 "UPDATE reserva
                  SET id_metodoPago = ?, comprobante = ?, estado_pago = 'por_verificar', codigo_pago = ?
@@ -681,12 +741,22 @@ final class Reserva extends Model
                 [$idReserva]
             );
             if ($pendiente !== null) {
-                self::run(
-                    'UPDATE pago_reserva SET monto = ?, id_metodoPago = ?, comprobante = ?, codigo = ?, fecha_registro = ? WHERE id_pago = ?',
-                    [$anticipo, $idMetodo, $rutaComprobante, $codigo, date('Y-m-d H:i:s'), $pendiente['id_pago']]
-                );
+                if ($conDatos) {
+                    self::run(
+                        'UPDATE pago_reserva
+                         SET monto = ?, id_metodoPago = ?, comprobante = ?, comprobante_nombre = ?,
+                             comprobante_tipo = ?, comprobante_datos = ?, codigo = ?, fecha_registro = ?
+                         WHERE id_pago = ?',
+                        [$anticipo, $idMetodo, $rutaComprobante, $nombreArchivo, $tipoArchivo, $datosArchivo, $codigo, date('Y-m-d H:i:s'), $pendiente['id_pago']]
+                    );
+                } else {
+                    self::run(
+                        'UPDATE pago_reserva SET monto = ?, id_metodoPago = ?, comprobante = ?, codigo = ?, fecha_registro = ? WHERE id_pago = ?',
+                        [$anticipo, $idMetodo, $rutaComprobante, $codigo, date('Y-m-d H:i:s'), $pendiente['id_pago']]
+                    );
+                }
             } else {
-                Ids::insertarConEntero('pago_reserva', 'id_pago', [
+                $fila = [
                     'id_reserva'     => $idReserva,
                     'tipo'           => 'anticipo',
                     'monto'          => $anticipo,
@@ -695,11 +765,51 @@ final class Reserva extends Model
                     'comprobante'    => $rutaComprobante,
                     'codigo'         => $codigo,
                     'fecha_registro' => date('Y-m-d H:i:s'),
-                ]);
+                ];
+                if ($conDatos) {
+                    $fila['comprobante_nombre'] = $nombreArchivo;
+                    $fila['comprobante_tipo'] = $tipoArchivo;
+                    $fila['comprobante_datos'] = $datosArchivo;
+                }
+                Ids::insertarConEntero('pago_reserva', 'id_pago', $fila);
             }
 
             return $codigo;
         });
+    }
+
+    /**
+     * Devuelve el comprobante más reciente de una reserva. Prioriza la imagen
+     * guardada en MySQL y, si no existe, la copia en disco.
+     *
+     * @return array{ruta:string,nombre:string,tipo:string,datos:?string}|null
+     */
+    public static function comprobantePago(int $idReserva): ?array
+    {
+        $pago = self::one(
+            "SELECT comprobante, comprobante_nombre, comprobante_tipo, comprobante_datos
+             FROM pago_reserva
+             WHERE id_reserva = ? AND (comprobante IS NOT NULL OR comprobante_datos IS NOT NULL)
+             ORDER BY id_pago DESC LIMIT 1",
+            [$idReserva]
+        );
+        if ($pago === null) {
+            $reserva = self::porId($idReserva);
+            $ruta = trim((string)($reserva['comprobante'] ?? ''));
+            return $ruta === '' ? null : [
+                'ruta'   => $ruta,
+                'nombre' => basename($ruta),
+                'tipo'   => '',
+                'datos'  => null,
+            ];
+        }
+
+        return [
+            'ruta'   => trim((string)($pago['comprobante'] ?? '')),
+            'nombre' => trim((string)($pago['comprobante_nombre'] ?? '')),
+            'tipo'   => trim((string)($pago['comprobante_tipo'] ?? '')),
+            'datos'  => $pago['comprobante_datos'] ?? null,
+        ];
     }
 
     /**

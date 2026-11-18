@@ -46,9 +46,9 @@ $filtros = ['fecha' => $fecha ?? '', 'estado' => $estado ?? '', 'cliente' => $id
         <?= vacio('No hay citas con estos filtros.', 'calendar') ?>
     <?php else: ?>
     <table class="table">
-        <thead><tr><th>Fecha</th><th>Hora</th><th>Clienta</th><th>Servicio</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Clienta</th><th>Servicio</th><th>Total</th><th>Estado</th><th>Pago</th><th>Acciones</th></tr></thead>
         <tbody>
-        <?php foreach ($reservas as $c): ?>
+        <?php foreach ($reservas as $c): $comp = trim((string)($c['comprobante_pago'] ?? $c['comprobante'] ?? '')); $compEnBd = !empty($c['comprobante_en_bd']); $estadoPago = (string)($c['estado_pago'] ?? 'sin_pago'); ?>
             <tr>
                 <td><?= e(date('d/m/Y', strtotime((string)$c['fecha']))) ?></td>
                 <td><b><?= e(substr((string)$c['hora'], 0, 5)) ?></b></td>
@@ -61,6 +61,14 @@ $filtros = ['fecha' => $fecha ?? '', 'estado' => $estado ?? '', 'cliente' => $id
                 <td><?= e($c['servicios'] ?? '—') ?></td>
                 <td><?= bs($c['total'] ?? 0) ?></td>
                 <td><?= estado((string)$c['estado']) ?></td>
+                <td>
+                    <?= estado_pago($estadoPago) ?>
+                    <?php if ($compEnBd || ($comp !== '' && archivo_existe($comp))): ?>
+                        <br><a class="link" href="<?= e(ruta('comprobante_pago', ['id' => $c['id_reserva']])) ?>" target="_blank" title="Ver comprobante"><?= icon('eye', 14) ?> Comprobante</a>
+                    <?php elseif ($comp !== ''): ?>
+                        <br><span class="muted">Comprobante no disponible</span>
+                    <?php endif; ?>
+                </td>
                 <td>
                     <div class="acts">
                         <a class="ic-btn" href="<?= ruta('empleado_citas', array_filter($filtros + ['ficha' => $c['id_reserva']])) ?>" title="Ver ficha"><?= icon('eye', 16) ?></a>

@@ -61,6 +61,7 @@ $hayFiltros = ($fecha ?? '') !== '' || $mes !== '' || $anio !== '' || ($estado ?
             <tbody>
             <?php foreach ($reservas as $c):
                 $comp = trim((string)($c['comprobante_pago'] ?? $c['comprobante'] ?? ''));
+                $compEnBd = !empty($c['comprobante_en_bd']);
                 $estadoPago = (string)($c['estado_pago'] ?? 'sin_pago');
                 $totalReserva = (float)($c['total'] ?? 0);
                 $pagado = (float)($c['monto_pagado'] ?? 0);
@@ -76,8 +77,8 @@ $hayFiltros = ($fecha ?? '') !== '' || $mes !== '' || $anio !== '' || ($estado ?
                     <td><?= estado((string)$c['estado']) ?></td>
                     <td>
                         <?= estado_pago($estadoPago) ?>
-                        <?php if ($comp !== '' && archivo_existe($comp)): ?>
-                            <br><a class="link" href="<?= e(url_archivo($comp)) ?>" target="_blank" title="Ver comprobante"><?= icon('eye', 14) ?> Comprobante</a>
+                        <?php if ($compEnBd || ($comp !== '' && archivo_existe($comp))): ?>
+                            <br><a class="link" href="<?= e(ruta('comprobante_pago', ['id' => $c['id_reserva']])) ?>" target="_blank" title="Ver comprobante"><?= icon('eye', 14) ?> Comprobante</a>
                         <?php elseif ($comp !== ''): ?>
                             <br><span class="muted" title="El archivo no está en el servidor"><?= icon('eye', 14) ?> Comprobante no disponible</span>
                         <?php endif; ?>

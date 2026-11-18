@@ -116,6 +116,44 @@ $sucursalNombre = (string)($sucursal_actual['nombre_sucursal'] ?? 'tu sucursal')
     </section>
 </div>
 
+<section class="panel" id="pagos-por-verificar" style="margin-top:1.4rem">
+    <div class="panel-head">
+        <h3><?= icon('clock', 18) ?> Comprobantes de pago por verificar</h3>
+        <span class="badge-st <?= !empty($pagosPendientes) ? 'st-pendiente' : 'st-activo' ?>"><?= count($pagosPendientes ?? []) ?></span>
+    </div>
+    <p class="muted" style="font-size:.88rem">Anticipos enviados por las clientas que todavía no confirmas. Abre el comprobante antes de validar el pago.</p>
+    <?php if (empty($pagosPendientes)): ?>
+        <?= vacio('No hay comprobantes pendientes. ¡Todo al día!', 'check') ?>
+    <?php else: ?>
+    <table class="table">
+        <thead><tr><th>Reserva</th><th>Fecha</th><th>Hora</th><th>Clienta</th><th>Anticipo</th><th>Comprobante</th><th></th></tr></thead>
+        <tbody>
+        <?php foreach ($pagosPendientes as $p): $comp = trim((string)($p['comprobante_actual'] ?? $p['comprobante'] ?? '')); $compEnBd = !empty($p['comprobante_en_bd']); ?>
+            <tr>
+                <td><b>#<?= (int)$p['id_reserva'] ?></b></td>
+                <td><?= e(date('d/m/Y', strtotime((string)$p['fecha']))) ?></td>
+                <td><?= e(substr((string)$p['hora'], 0, 5)) ?></td>
+                <td><?= e($p['cliente']) ?><br><small class="muted"><?= e($p['telefono'] ?: '—') ?></small></td>
+                <td><?= bs($p['anticipo'] ?? 0) ?></td>
+                <td>
+                    <?php if ($compEnBd || ($comp !== '' && archivo_existe($comp))): ?>
+                        <a class="link" href="<?= e(ruta('comprobante_pago', ['id' => $p['id_reserva']])) ?>" target="_blank"><?= icon('eye', 14) ?> Ver comprobante</a>
+                    <?php elseif ($comp !== ''): ?>
+                        <span class="muted">Comprobante no disponible</span>
+                    <?php else: ?>
+                        <span class="muted">No adjunto</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <a class="ic-btn" href="<?= ruta('empleado_citas', ['ficha' => $p['id_reserva'], 'fecha' => $p['fecha']]) ?>" title="Abrir en la agenda"><?= icon('calendar', 16) ?></a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
+</section>
+
 <section class="panel">
     <div class="panel-head"><h3>Acciones rápidas</h3></div>
     <div class="quick">

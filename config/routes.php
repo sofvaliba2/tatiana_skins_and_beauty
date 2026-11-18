@@ -47,6 +47,7 @@ return [
     'reserva_seguimiento'  => [ReservaController::class, 'seguimiento', 'cliente'],
     'reserva_recibo'       => [ReservaController::class, 'recibo', 'cliente'],
     'mis_reservas'         => [ReservaController::class, 'misReservas', 'cliente'],
+    'comprobante_pago'     => [ReservaController::class, 'comprobantePago', 'cliente_personal'],
     'recomendaciones'      => [ReservaController::class, 'recomendaciones', 'cliente'],
 
     // Administración (solo ROL01)

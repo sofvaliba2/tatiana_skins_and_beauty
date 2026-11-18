@@ -23,7 +23,7 @@ require __DIR__ . '/../layout/admin_header.php';
     <table class="table">
         <thead><tr><th>Reserva</th><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Teléfono</th><th>Sucursal</th><th>Total / anticipo</th><th>Comprobante</th><th></th></tr></thead>
         <tbody>
-        <?php foreach ($pendientes as $p): $comp = trim((string)($p['comprobante_actual'] ?? $p['comprobante'] ?? '')); ?>
+        <?php foreach ($pendientes as $p): $comp = trim((string)($p['comprobante_actual'] ?? $p['comprobante'] ?? '')); $compEnBd = !empty($p['comprobante_en_bd']); ?>
             <tr>
                 <td><b>#<?= (int)$p['id_reserva'] ?></b></td>
                 <td><?= e(date('d/m/Y', strtotime((string)$p['fecha']))) ?></td>
@@ -33,8 +33,8 @@ require __DIR__ . '/../layout/admin_header.php';
                 <td><?= e($p['nombre_sucursal'] ?? '—') ?></td>
                 <td><?= bs($p['precio_total'] ?? 0) ?><br><small class="muted">Anticipo <?= bs($p['anticipo'] ?? 0) ?></small></td>
                 <td>
-                    <?php if ($comp !== '' && archivo_existe($comp)): ?>
-                        <a class="link" href="<?= e(url_archivo($comp)) ?>" target="_blank">Ver comprobante</a>
+                    <?php if ($compEnBd || ($comp !== '' && archivo_existe($comp))): ?>
+                        <a class="link" href="<?= e(ruta('comprobante_pago', ['id' => $p['id_reserva']])) ?>" target="_blank">Ver comprobante</a>
                     <?php elseif ($comp !== ''): ?>
                         <span class="muted">Archivo no disponible</span>
                     <?php else: ?>

@@ -57,7 +57,9 @@ CREATE TABLE `categoria_servicio` (
 --
 
 INSERT INTO `categoria_servicio` (`id_categoriaS`, `nombre_cservicio`) VALUES
-('CS01', 'depilaciones');
+('CS01', 'Depilaciones'),
+('CS02', 'Faciales'),
+('CS03', 'Corporales');
 
 -- --------------------------------------------------------
 
@@ -152,7 +154,7 @@ INSERT INTO `cuenta_usuario` (`id_cuentaUsuario`, `correo`, `password`, `id_rol`
 (2, 'quispeliz143@gmail.com', '$2y$10$iHb/rElQP17UgxbrnXjmYOSXQ/aTZ5oxJTOhX3Nxa0rSNEavz.cJi', 'ROL03', 'CLI0001'),
 (3, 'morenosamantha016@gmail.com', '3Zf4ONFiZepW03KNXmKnK5xEB4rLSATZrGVQ0nzTcxs=', 'ROL03', 'CLI0002'),
 (4, 'luzzegarra@gmail.com', '4CwETg7A9MqjyL4ZxqbMxAmV7rjbk8wokqQ6uYJh4Gc=', 'ROL03', 'CLI0003'),
-(5, 'empleado@empleado.com', '$2y$10$FJnAWRPqr/ZWliLFGxSw0.qVBwoQDxl0azxfpObuQcJKHixieOlGu', 'ROL02', 'EMP001');
+(5, 'empleado@empleado.com', '$2y$10$d1r5OIs8U26Z6rkOkEXnDen3ZuiNAOzJ.gH6ukL/2Nkwu1ZfE4um.', 'ROL02', 'EMP001');
 
 -- --------------------------------------------------------
 
@@ -363,6 +365,9 @@ CREATE TABLE `pago_reserva` (
   `id_metodoPago` varchar(10) DEFAULT NULL,
   `estado` varchar(20) NOT NULL DEFAULT 'por_verificar',
   `comprobante` varchar(255) DEFAULT NULL,
+  `comprobante_nombre` varchar(255) DEFAULT NULL,
+  `comprobante_tipo` varchar(60) DEFAULT NULL,
+  `comprobante_datos` longblob DEFAULT NULL,
   `codigo` varchar(40) DEFAULT NULL,
   `fecha_registro` datetime DEFAULT NULL,
   `fecha_verificacion` datetime DEFAULT NULL,
@@ -514,10 +519,10 @@ CREATE TABLE `servicio` (
 --
 
 INSERT INTO `servicio` (`id_servicio`, `nombre`, `descripcion`, `precio`, `duracion_minutos`, `id_categoriaS`) VALUES
-('SERV01', 'Hidrafacial', 'Hidratante', 15.00, 30, NULL),
+('SERV01', 'Hidrafacial', 'Hidratante', 15.00, 30, 'CS02'),
 ('SERV02', 'depilacion facial', 'depilacion con laser facial', 140.00, 30, 'CS01'),
 ('SERV03', 'depilacion zona-axilas', 'depilacion en el area de las axilas', 100.00, 30, 'CS01'),
-('SERV04', 'depilacion zona-media pierna', 'depilacion en el area de la media pierna', 180.00, 30, NULL);
+('SERV04', 'depilacion zona-media pierna', 'depilacion en el area de la media pierna', 180.00, 30, 'CS01');
 
 -- --------------------------------------------------------
 

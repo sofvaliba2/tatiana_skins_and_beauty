@@ -12,6 +12,7 @@ $sucursal_actual = $sucursal_actual ?? null;
 $usuario_actual = $usuario_actual ?? null;
 $nombreSucursal = (string)($sucursal_actual['nombre_sucursal'] ?? ($u['sucursal_nombre'] ?? 'Sin sucursal'));
 $avisosPendientes = (int)($avisos_admin ?? 0);
+$avisosPagos = (int)($avisos_pagos ?? 0);
 $nombre = (string)($usuario_actual['nombre'] ?? $u['nombre'] ?? 'Equipo');
 $apellidos = trim((string)($usuario_actual['ap_paterno'] ?? '') . ' ' . (string)($usuario_actual['ap_materno'] ?? ''));
 $iniciales = mb_strtoupper(
@@ -74,7 +75,12 @@ function emp_item_menu(string $vista, string $icono, string $texto, string $acti
                 <span class="input" style="cursor:default;color:var(--morado)"><?= e($titulo) ?></span>
             </div>
             <div style="display:flex;align-items:center;gap:1rem">
-                <?php if ($avisosPendientes > 0): ?>
+                <?php if ($avisosPagos > 0): ?>
+                    <a href="<?= ruta('empleado_dashboard') ?>#pagos-por-verificar" class="ic-btn" title="<?= $avisosPagos ?> comprobante(s) de pago por verificar" style="position:relative">
+                        <?= icon('bell', 22) ?>
+                        <span class="badge" style="position:absolute;top:-6px;right:-8px;background:var(--warn,#c47f00);color:#fff"><?= $avisosPagos ?></span>
+                    </a>
+                <?php elseif ($avisosPendientes > 0): ?>
                     <a href="<?= ruta('empleado_citas', ['estado' => 'pendiente']) ?>" class="ic-btn" title="<?= $avisosPendientes ?> cita(s) pendiente(s)" style="position:relative">
                         <?= icon('bell', 22) ?>
                         <span class="badge" style="position:absolute;top:-6px;right:-8px;background:var(--warn,#c47f00);color:#fff"><?= $avisosPendientes ?></span>

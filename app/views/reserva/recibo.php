@@ -121,9 +121,9 @@ $cuadra = $itemsConError === 0 && abs(round($sumaSubtotales, 2) - (float)($resum
                     <p class="hint muted" style="text-align:center;font-size:.8rem">Código de pago: <?= e($reserva['codigo_pago']) ?></p>
                 <?php endif; ?>
 
-                <?php if (!empty($reserva['comprobante']) && archivo_existe($reserva['comprobante'])): ?>
+                <?php if (!empty($comprobanteEnBd) || (!empty($reserva['comprobante']) && archivo_existe($reserva['comprobante']))): ?>
                     <p class="hint" style="text-align:center;font-size:.85rem">
-                        <a class="link" href="<?= e(url_archivo($reserva['comprobante'])) ?>" target="_blank">Ver comprobante enviado</a>
+                        <a class="link" href="<?= e(ruta('comprobante_pago', ['id' => $idReserva])) ?>" target="_blank">Ver comprobante enviado</a>
                     </p>
                 <?php elseif (!empty($reserva['comprobante'])): ?>
                     <p class="hint muted" style="text-align:center;font-size:.85rem">Comprobante registrado (archivo no disponible en el servidor)</p>
