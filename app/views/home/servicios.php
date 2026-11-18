@@ -17,7 +17,7 @@ require __DIR__ . '/../layout/header.php';
         <div class="tabs" style="margin-bottom:2rem">
             <a class="tab active" href="#">Todos</a>
             <?php foreach (($categorias ?? []) as $c): ?>
-                <a class="tab" href="#"><?= e($c) ?></a>
+                <a class="tab<?= ($cat ?? '') === (string)($c['id_categoriaS'] ?? '') ? ' active' : '' ?>" href="<?= ruta('servicios', ['cat' => $c['id_categoriaS'] ?? '']) ?>"><?= e($c['nombre_cservicio'] ?? '') ?></a>
             <?php endforeach; ?>
         </div>
         <div class="grid-3">
@@ -26,7 +26,7 @@ require __DIR__ . '/../layout/header.php';
                 <div class="ico"><?= icon($s['icono'] ?? 'sparkle', 28) ?></div>
                 <h3><?= e($s['nombre']) ?></h3>
                 <p class="muted" style="font-size:.92rem"><?= e($s['descripcion']) ?></p>
-                <div class="meta"><span><?= icon('clock', 15) ?> <?= (int)$s['duracion'] ?> min</span></div>
+                <div class="meta"><span><?= icon('clock', 15) ?> <?= (int)($s['duracion_minutos'] ?? 0) ?> min</span></div>
                 <div class="precio">Bs. <?= number_format($s['precio'], 0) ?></div>
                 <a href="<?= ruta('reserva_nueva') ?>" class="btn btn-primary btn-sm" style="margin-top:1rem">Reservar</a>
             </article>

@@ -51,7 +51,7 @@ final class AuthController extends Controller
             $v = Validate::make()
                 ->nombrePersona('nombre', 'El nombre', 2, 50)
                 ->nombrePersona('ap_paterno', 'El apellido paterno', 2, 50)
-                ->nombrePersona('ap_materno', 'El apellido materno', 2, 50, false)
+                ->nombrePersona('ap_materno', 'El apellido materno', 2, 50)
                 ->telefonoBolivia('telefono')
                 ->correo('correo')
                 ->fechaNacimiento('fecha_nacimiento', true, 18)
