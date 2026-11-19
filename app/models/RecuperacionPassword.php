@@ -6,10 +6,13 @@ namespace App\Models;
 /**
  * Tokens de un solo uso para recuperar la contraseña.
  * El token en claro solo viaja por correo; en BD se guarda únicamente su hash SHA-256.
+ * La misma tabla se usa además para limitar solicitudes excesivas por IP.
  */
 final class RecuperacionPassword extends Model
 {
     public const MINUTOS_VIGENCIA = 60;
+    public const MAX_SOLICITUDES_POR_HORA = 5;
+    public const MINUTOS_VENTANA = 60;
 
     /**
      * Crea un token para el correo indicado.
@@ -67,5 +70,50 @@ final class RecuperacionPassword extends Model
     public static function limpiar(): void
     {
         self::run('DELETE FROM recuperacion_password WHERE expira_en < DATE_SUB(NOW(), INTERVAL 1 DAY) OR usado_en IS NOT NULL');
+    }
+
+    /** Número de solicitudes de esa IP dentro de la ventana de protección. */
+    public static function solicitudesRecientes(string $ip): int
+    {
+        return (int)self::value(
+            'SELECT COUNT(*) FROM recuperacion_password
+             WHERE ip = ? AND creado_en >= DATE_SUB(NOW(), INTERVAL ' . self::MINUTOS_VENTANA . ' MINUTE)',
+            [$ip]
+        );
+    }
+
+    /** Protección contra solicitudes excesivas: máximo 5 enlaces por IP y hora. */
+    public static function puedeSolicitar(string $ip): bool
+    {
+        return self::solicitudesRecientes($ip) < self::MAX_SOLICITUDES_POR_HORA;
+    }
+
+    /** Segundos que faltan para que la IP pueda volver a solicitar un enlace. */
+    public static function segundosEspera(string $ip): int
+    {
+        $masAntiguo = self::value(
+            'SELECT MIN(creado_en) FROM recuperacion_password
+             WHERE ip = ? AND creado_en >= DATE_SUB(NOW(), INTERVAL ' . self::MINUTOS_VENTANA . ' MINUTE)',
+            [$ip]
+        );
+        if ($masAntiguo === null) {
+            return self::MINUTOS_VENTANA * 60;
+        }
+
+        $transcurrido = time() - strtotime((string)$masAntiguo);
+        return max(1, self::MINUTOS_VENTANA * 60 - $transcurrido);
+    }
+
+    /** Mensaje neutro: no revela si el correo existe ni quién solicitó el enlace. */
+    public static function mensajeEspera(int $segundos): string
+    {
+        $minutos = intdiv($segundos, 60);
+        $resto = $segundos % 60;
+        if ($minutos > 0) {
+            return 'Hiciste demasiadas solicitudes seguidas. Intenta nuevamente en '
+                . $minutos . ' min' . ($resto > 0 ? ' y ' . $resto . ' s' : '') . '.';
+        }
+        return 'Hiciste demasiadas solicitudes seguidas. Intenta nuevamente en '
+            . max(1, $segundos) . ' segundos.';
     }
 }

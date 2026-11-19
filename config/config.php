@@ -49,12 +49,6 @@ define('PAGO_QR_PAYLOAD', env('PAGO_QR_PAYLOAD', ''));
 // ---------------------------------------------------------------------------
 // Correo (recuperación de contraseña)
 // ---------------------------------------------------------------------------
-// MAIL_FROM / MAIL_FROM_NAME: remitente usado por mail().
-// MAIL_DEV_LINK=true: en desarrollo se muestra el enlace en pantalla para poder
-// probar la recuperación sin servidor SMTP (no usar en producción).
-// MAIL_LINK_BASE: base absoluta opcional para los enlaces dentro del correo,
-// por ejemplo https://tati.example.com (sin barra final).
-define('MAIL_FROM', env('MAIL_FROM', 'no-reply@tatianaskinandbeauty.bo'));
-define('MAIL_FROM_NAME', env('MAIL_FROM_NAME', 'Tatiana Skin and Beauty'));
-define('MAIL_DEV_LINK', env('MAIL_DEV_LINK', 'false') === 'true');
-define('MAIL_LINK_BASE', rtrim(env('MAIL_LINK_BASE', ''), '/'));
+// El remitente, el servidor SMTP y las credenciales se centralizan en
+// config/smtp.php y se leen desde variables de entorno / .env.
+// Nunca se muestra el enlace de recuperación en pantalla: solo se envía por correo.

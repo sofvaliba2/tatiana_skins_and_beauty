@@ -108,41 +108,46 @@ final class AuthController extends Controller
     {
         $errores = [];
         $enviado = false;
-        $devLink = '';
-        $mailError = false;
+
         if ($this->esPost()) {
+            $correo = mb_strtolower(trim((string)($_POST['correo'] ?? '')));
+            $_POST['correo'] = $correo;
             $v = Validate::make()->correo('correo');
+
             if ($v->fallido()) {
                 $errores = $v->errores();
+            } elseif (!RecuperacionPassword::puedeSolicitar(SeguridadLogin::ip())) {
+                // Límite por IP. El mensaje no revela si la cuenta existe.
+                $errores['_general'][] = RecuperacionPassword::mensajeEspera(
+                    RecuperacionPassword::segundosEspera(SeguridadLogin::ip())
+                );
             } else {
                 $enviado = true;
                 RecuperacionPassword::limpiar();
-                $solicitud = RecuperacionPassword::crear((string)$_POST['correo']);
+                $solicitud = RecuperacionPassword::crear($correo);
+
                 if ($solicitud !== null) {
                     $enlace = Correo::enlaceRestablecer($solicitud['token']);
                     $cuenta = Usuario::cuentaPorCorreo($solicitud['correo']);
                     $nombre = (string)($cuenta['nombre'] ?? '');
                     $html = Correo::plantillaRecuperacion($nombre, $enlace);
-                    if (!Correo::enviar($solicitud['correo'], 'Restablece tu contraseña', $html)) {
-                        $mailError = true;
+                    $texto = Correo::plantillaTextoRecuperacion($nombre, $enlace);
+
+                    // Si falla el SMTP se registra en el log, pero la respuesta al
+                    // usuario sigue siendo idéntica para no revelar si el correo existe.
+                    if (!Correo::enviar($solicitud['correo'], 'Restablece tu contraseña', $html, $texto)) {
                         error_log('[RECUPERACION] No se pudo enviar el correo a ' . $solicitud['correo']);
                     }
-                    // En desarrollo se muestra el enlace para poder probar sin SMTP.
-                    if (MAIL_DEV_LINK) {
-                        $devLink = $enlace;
-                    }
                 }
-                // Mensaje genérico: nunca revela si el correo está registrado.
-                Flash::ok('Si el correo está registrado, enviamos un enlace para restablecer tu contraseña. '
-                    . 'Revisa tu bandeja de entrada y spam. El enlace vence en '
-                    . RecuperacionPassword::MINUTOS_VIGENCIA . ' minutos.');
+
+                // La confirmación se muestra en la vista de forma persistente y
+                // siempre es la misma: nunca revela si el correo está registrado.
             }
         }
+
         $this->vista('auth/recuperar.php', [
             'errores' => $errores,
             'enviado' => $enviado,
-            'devLink' => $devLink,
-            'mailError' => $mailError,
         ]);
     }
 

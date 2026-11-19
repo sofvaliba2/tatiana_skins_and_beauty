@@ -10,27 +10,18 @@ require __DIR__ . '/../layout/header.php';
                 Escribe el correo con el que te registraste. Si está registrado, te enviaremos un enlace seguro para crear una nueva contraseña.
             </p>
 
-            <?php if (!empty($enviado) && empty($errores)): ?>
-                <?php if (!empty($devLink)): ?>
-                    <!-- Panel persistente: NO usa clase "alert" para que app.js no lo oculte. -->
-                    <div class="recuperacion-dev">
-                        <strong><?= icon('key', 18) ?> Modo desarrollo / pruebas</strong>
-                        <p>
-                            En este entorno no hay servidor de correo configurado, por eso el enlace
-                            se muestra aquí en pantalla. Cópialo o haz clic para crear tu nueva contraseña.
-                        </p>
-                        <?php if (!empty($mailError)): ?>
-                            <p class="muted">El envío por correo falló (SMTP no configurado), pero el enlace de abajo funciona igual.</p>
-                        <?php endif; ?>
-                        <a class="btn btn-primary btn-block" href="<?= e($devLink) ?>">Abrir enlace de restablecimiento</a>
-                        <p class="muted" style="margin-top:.75rem;font-size:.82rem;word-break:break-all">
-                            O copia esta dirección: <?= e($devLink) ?>
-                        </p>
-                        <p class="muted" style="margin-top:.5rem;font-size:.82rem">
-                            Vence en <?= \App\Models\RecuperacionPassword::MINUTOS_VIGENCIA ?> minutos y solo se puede usar una vez.
-                        </p>
-                    </div>
-                <?php endif; ?>
+            <?php if (!empty($errores['_general'])): ?>
+                <div class="alert warn"><?= icon('shield', 18) ?> <span><?= e($errores['_general'][0]) ?></span></div>
+            <?php endif; ?>
+
+            <?php if (!empty($enviado) && empty($errores['_general'])): ?>
+                <div class="recuperacion-ok">
+                    <strong><?= icon('check', 18) ?> Revisa tu correo</strong>
+                    <p>
+                        Si la dirección está registrada, ya enviamos el enlace para crear tu nueva contraseña.
+                        No olvides revisar también la carpeta de spam.
+                    </p>
+                </div>
                 <p class="muted" style="margin-top:1.2rem;font-size:.9rem">
                     Si no recuerdas el correo con el que te registraste, solicita ayuda en la sucursal más cercana.
                 </p>
@@ -45,6 +36,7 @@ require __DIR__ . '/../layout/header.php';
                     <button class="btn btn-primary btn-block" type="submit">Enviar enlace</button>
                 </form>
             <?php endif; ?>
+
             <p class="muted" style="margin-top:1.5rem;text-align:center;font-size:.92rem">
                 <a href="<?= ruta('login') ?>">Volver a iniciar sesión</a>
             </p>
