@@ -272,6 +272,7 @@ final class AdminSistemaController extends Controller
         $x->fila($h, 9, [$head('Sucursal'), $head('Compras'), $head('Ingresos'), $head('Reservas'), $head('Atendidas'), $head('Canceladas')], 22);
         $f = 10;
         $catsIngresos = $valsIngresos = $catsReservas = $valsReservas = [];
+        $valsCompras = $valsAtendidas = $valsCanceladas = $valsPendientes = [];
         foreach ($porSucursal as $s) {
             $x->fila($h, $f, [
                 Xlsx::celda((string)$s['nombre_sucursal'], Xlsx::S_TEXT),
@@ -285,6 +286,10 @@ final class AdminSistemaController extends Controller
             $valsIngresos[] = (float)$s['monto'];
             $catsReservas[] = (string)$s['nombre_sucursal'];
             $valsReservas[] = (int)$s['reservas'];
+            $valsCompras[] = (int)$s['compras'];
+            $valsAtendidas[] = (int)$s['atendidas'];
+            $valsCanceladas[] = (int)$s['canceladas'];
+            $valsPendientes[] = max(0, (int)$s['reservas'] - (int)$s['atendidas'] - (int)$s['canceladas']);
             $f++;
         }
         $x->fila($h, $f + 1, [Xlsx::celda('Nota: "Sin sucursal asignada" agrupa registros cargados antes de asignar una sucursal.', Xlsx::S_NOTE)]);
@@ -294,6 +299,19 @@ final class AdminSistemaController extends Controller
         $x->grafico($h, 'bar', 'Reservas por sucursal', $catsReservas, [
             ['name' => 'Reservas', 'values' => $valsReservas],
         ], ['c1' => 7, 'f1' => 18, 'c2' => 15, 'f2' => 33], 'bar');
+        $x->grafico($h, 'bar', 'Compras vs. reservas por sucursal', $catsReservas, [
+            ['name' => 'Compras', 'values' => $valsCompras],
+            ['name' => 'Reservas', 'values' => $valsReservas],
+        ], ['c1' => 7, 'f1' => 34, 'c2' => 15, 'f2' => 49]);
+        if (array_sum($valsReservas) > 0) {
+            $x->grafico($h, 'pie', 'Estado de las reservas', ['Atendidas', 'Canceladas', 'Pendientes'], [
+                ['name' => 'Reservas', 'values' => [
+                    array_sum($valsAtendidas),
+                    array_sum($valsCanceladas),
+                    array_sum($valsPendientes),
+                ]],
+            ], ['c1' => 7, 'f1' => 50, 'c2' => 15, 'f2' => 65]);
+        }
 
         $destinos = [];
         foreach ($sucursales as $s) {
@@ -464,6 +482,7 @@ final class AdminSistemaController extends Controller
         $f += 2;
         $x->fila($h, $f, [$head('Cliente'), $head('Compras'), $head('Reservas'), $head('Gastado')], 22);
         $f++;
+        $catsClientes = $valsClientes = [];
         foreach ($clientes as $c) {
             $x->fila($h, $f, [
                 Xlsx::celda((string)$c['cliente'], Xlsx::S_TEXT),
@@ -471,7 +490,23 @@ final class AdminSistemaController extends Controller
                 Xlsx::celda((int)$c['reservas'], Xlsx::S_INT),
                 Xlsx::celda((float)$c['gastado'], Xlsx::S_MONEY),
             ]);
+            $catsClientes[] = (string)$c['cliente'];
+            $valsClientes[] = (float)$c['gastado'];
             $f++;
+        }
+        if ($catsClientes !== []) {
+            $x->grafico($h, 'bar', 'Clientes con mayor gasto', $catsClientes, [
+                ['name' => 'Gastado (Bs.)', 'values' => $valsClientes],
+            ], ['c1' => 6, 'f1' => 82, 'c2' => 15, 'f2' => 97], 'bar');
+        }
+        if ((int)($reservas['total'] ?? 0) > 0) {
+            $x->grafico($h, 'pie', 'Estado de las reservas', ['Atendidas', 'Canceladas', 'Pendientes'], [
+                ['name' => 'Reservas', 'values' => [
+                    (int)($reservas['atendidas'] ?? 0),
+                    (int)($reservas['canceladas'] ?? 0),
+                    max(0, (int)($reservas['total'] ?? 0) - (int)($reservas['atendidas'] ?? 0) - (int)($reservas['canceladas'] ?? 0)),
+                ]],
+            ], ['c1' => 6, 'f1' => 98, 'c2' => 15, 'f2' => 113]);
         }
     }
 

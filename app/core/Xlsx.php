@@ -100,14 +100,16 @@ final class Xlsx
     /** Envía el archivo al navegador como descarga. */
     public function descargar(string $nombre): void
     {
-        if (ob_get_level() > 0) {
+        while (ob_get_level() > 0) {
             ob_end_clean();
         }
+        $bytes = $this->bytes();
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . preg_replace('/[^A-Za-z0-9._-]/', '_', $nombre) . '"');
-        header('Content-Length: ' . strlen($this->bytes()));
+        header('Content-Length: ' . strlen($bytes));
         header('Cache-Control: no-store, no-cache, must-revalidate');
-        echo $this->bytes();
+        header('X-Content-Type-Options: nosniff');
+        echo $bytes;
         exit;
     }
 
@@ -169,7 +171,9 @@ final class Xlsx
         $x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
         if ($hoja['rows'] !== []) {
-            $x .= '<dimension ref="A1:' . self::colName(max(1, ...array_map(static fn ($f) => count($f['cells']), $hoja['rows']))) . '" />';
+            $maxCol = max(1, ...array_map(static fn ($f) => count($f['cells']), $hoja['rows']));
+            $maxFil = max(array_keys($hoja['rows']));
+            $x .= '<dimension ref="A1:' . self::colName($maxCol) . $maxFil . '"/>';
         }
         $x .= '<sheetViews><sheetView showGridLines="0" workbookViewId="0">';
         if ($hoja['freeze'] !== null) {
@@ -252,11 +256,12 @@ final class Xlsx
             foreach ($chart['series'] as $si => $serie) {
                 $x .= self::serieXml($serie, $chart['categorias'], $si, $chart['colores'], $esCircular);
             }
+            $horizontal = $chart['direccion'] === 'bar';
             $x .= '<c:gapWidth val="80"/><c:axId val="111111111"/><c:axId val="222222222"/></c:barChart>'
                 . '<c:catAx><c:axId val="111111111"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/>'
-                . '<c:axPos val="b"/><c:tickLblPos val="nextTo"/><c:crossAx val="222222222"/><c:crosses val="autoZero"/></c:catAx>'
+                . '<c:axPos val="' . ($horizontal ? 'l' : 'b') . '"/><c:tickLblPos val="nextTo"/><c:crossAx val="222222222"/><c:crosses val="autoZero"/></c:catAx>'
                 . '<c:valAx><c:axId val="222222222"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/>'
-                . '<c:axPos val="l"/><c:numFmt formatCode="0.00" sourceLinked="0"/><c:tickLblPos val="nextTo"/>'
+                . '<c:axPos val="' . ($horizontal ? 'b' : 'l') . '"/><c:numFmt formatCode="0.00" sourceLinked="0"/><c:tickLblPos val="nextTo"/>'
                 . '<c:crossAx val="111111111"/><c:crosses val="autoZero"/></c:valAx>';
         }
         $x .= '</c:plotArea><c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend><c:plotVisOnly val="1"/></c:chart>'
