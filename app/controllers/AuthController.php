@@ -116,6 +116,10 @@ final class AuthController extends Controller
 
             if ($v->fallido()) {
                 $errores = $v->errores();
+            } elseif (!Correo::configuracionCompleta()) {
+                // Mensaje genérico: no revela si el correo está registrado.
+                $errores['_general'][] = 'No pudimos enviar el enlace en este momento. '
+                    . 'Intenta nuevamente más tarde o solicita ayuda en la sucursal más cercana.';
             } elseif (!RecuperacionPassword::puedeSolicitar(SeguridadLogin::ip())) {
                 // Límite por IP. El mensaje no revela si la cuenta existe.
                 $errores['_general'][] = RecuperacionPassword::mensajeEspera(

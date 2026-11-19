@@ -44,6 +44,14 @@ final class Correo
         }
     }
 
+    /** Indica si hay datos SMTP suficientes para intentar un envío. */
+    public static function configuracionCompleta(): bool
+    {
+        $cfg = self::configuracion();
+        return $cfg['host'] !== ''
+            && (!$cfg['auth'] || ($cfg['user'] !== '' && $cfg['pass'] !== ''));
+    }
+
     /** Envía un correo HTML por SMTP. Devuelve true solo si el servidor lo aceptó. */
     public static function enviar(string $para, string $asunto, string $html, string $texto = ''): bool
     {
@@ -52,11 +60,12 @@ final class Correo
             return false;
         }
 
-        $cfg = self::configuracion();
-        if ($cfg['host'] === '' || ($cfg['auth'] && ($cfg['user'] === '' || $cfg['pass'] === ''))) {
+        if (!self::configuracionCompleta()) {
             error_log('[SMTP] Configuración incompleta: revisa SMTP_HOST, SMTP_USER y SMTP_PASS en .env');
             return false;
         }
+
+        $cfg = self::configuracion();
 
         self::cargarPhpMailer();
 
