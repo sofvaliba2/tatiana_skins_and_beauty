@@ -23,6 +23,19 @@ function ruta(string $vista, array $params = []): string
     return $url;
 }
 
+/**
+ * URL de un recurso estático con versión según su fecha de modificación.
+ * Evita que el navegador use una copia antigua de app.js / style.css después
+ * de actualizar el sistema (motivo habitual de "el ojito no funciona").
+ */
+function asset(string $ruta): string
+{
+    $ruta = '/' . ltrim($ruta, '/');
+    $archivo = BASE_PATH . '/public' . $ruta;
+    $version = is_file($archivo) ? (string)filemtime($archivo) : '1';
+    return BASE_URL . $ruta . '?v=' . $version;
+}
+
 function csrf(): string
 {
     return \App\Core\Csrf::campo();

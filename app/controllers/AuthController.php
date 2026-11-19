@@ -109,6 +109,7 @@ final class AuthController extends Controller
         $errores = [];
         $enviado = false;
         $devLink = '';
+        $mailError = false;
         if ($this->esPost()) {
             $v = Validate::make()->correo('correo');
             if ($v->fallido()) {
@@ -123,6 +124,7 @@ final class AuthController extends Controller
                     $nombre = (string)($cuenta['nombre'] ?? '');
                     $html = Correo::plantillaRecuperacion($nombre, $enlace);
                     if (!Correo::enviar($solicitud['correo'], 'Restablece tu contraseña', $html)) {
+                        $mailError = true;
                         error_log('[RECUPERACION] No se pudo enviar el correo a ' . $solicitud['correo']);
                     }
                     // En desarrollo se muestra el enlace para poder probar sin SMTP.
@@ -140,6 +142,7 @@ final class AuthController extends Controller
             'errores' => $errores,
             'enviado' => $enviado,
             'devLink' => $devLink,
+            'mailError' => $mailError,
         ]);
     }
 

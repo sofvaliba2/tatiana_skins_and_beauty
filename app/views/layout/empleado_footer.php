@@ -3,6 +3,6 @@
         </p>
     </div><!-- /main -->
 </div><!-- /admin -->
-<script src="<?= BASE_URL ?>/js/app.js"></script>
+<script src="<?= asset('/js/app.js') ?>"></script>
 </body>
 </html>

@@ -47,6 +47,6 @@ $esStaffFooter = in_array($uFooter['id_rol'] ?? '', ['ROL01', 'ROL02'], true);
         <div class="copy">© <?= date('Y') ?> Tatiana Skin and Beauty · Tu piel, nuestra prioridad</div>
     </div>
 </footer>
-<script src="<?= BASE_URL ?>/js/app.js"></script>
+<script src="<?= asset('/js/app.js') ?>"></script>
 </body>
 </html>
