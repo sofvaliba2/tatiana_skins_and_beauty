@@ -372,6 +372,14 @@ textarea.input { resize: vertical; min-height: 100px; }
 .bars .bar:hover { opacity: 1; }
 .bars .bar span { position: absolute; bottom: -1.6rem; left: 50%; transform: translateX(-50%); font-size: .72rem; color: var(--texto-suave); }
 
+/* Reportes por sucursal */
+.sucursal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.suc-card { background: #fff; border: 1px solid var(--lila-claro); border-radius: var(--radio-sm); padding: 1.1rem 1.2rem; }
+.suc-card h4 { margin: 0 0 .35rem; font-size: 1.1rem; color: var(--morado); }
+.suc-card .suc-monto { font-family: var(--f-display); font-size: 1.6rem; color: var(--morado); line-height: 1.1; }
+.suc-card .suc-meta { display: flex; justify-content: space-between; gap: 1rem; font-size: .85rem; padding: .3rem 0; border-bottom: 1px solid var(--lila-suave); color: var(--texto-suave); }
+.suc-card .suc-meta b { color: var(--texto); font-weight: 500; }
+
 /* Gráficos de reportes */
 .chart-bars { display: flex; align-items: stretch; gap: 3px; height: 210px; }
 .chart-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }

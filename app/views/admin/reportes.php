@@ -4,6 +4,16 @@ $activo = 'admin_reportes';
 require __DIR__ . '/../layout/admin_header.php';
 $mes = $mes ?? '';
 $anio = $anio ?? '';
+$sucursal = $sucursal ?? '';
+$sucursales = $sucursales ?? [];
+$porSucursal = $porSucursal ?? [];
+$promociones = $promociones ?? [];
+$sucursalNombre = $sucursal === '' ? 'Todas las sucursales' : ($sucursal === 'NULL' ? 'Sin sucursal asignada' : $sucursal);
+foreach ($sucursales as $s) {
+    if ($s['id_sucursal'] === $sucursal) {
+        $sucursalNombre = $s['nombre_sucursal'];
+    }
+}
 $anios = $anios ?? [(int)date('Y')];
 $meses = ['1' => 'Enero', '2' => 'Febrero', '3' => 'Marzo', '4' => 'Abril', '5' => 'Mayo', '6' => 'Junio', '7' => 'Julio', '8' => 'Agosto', '9' => 'Septiembre', '10' => 'Octubre', '11' => 'Noviembre', '12' => 'Diciembre'];
 $hayFiltros = $mes !== '' || $anio !== '';
@@ -78,15 +88,30 @@ $donut = $stops ? 'conic-gradient(' . implode(', ', $stops) . ')' : 'conic-gradi
             <?php endforeach; ?>
         </select>
     </div>
+    <div class="field" style="margin:0"><label>Sucursal</label>
+        <select class="input" name="sucursal">
+            <option value="">Todas las sucursales</option>
+            <?php foreach ($sucursales as $s): ?>
+                <option value="<?= e($s['id_sucursal']) ?>" <?= $sucursal === $s['id_sucursal'] ? 'selected' : '' ?>><?= e($s['nombre_sucursal']) ?></option>
+            <?php endforeach; ?>
+            <option value="NULL" <?= $sucursal === 'NULL' ? 'selected' : '' ?>>Sin sucursal asignada</option>
+        </select>
+    </div>
     <button class="btn btn-primary" type="submit"><?= icon('filter', 16) ?> Aplicar</button>
-    <?php if ($hayFiltros): ?>
+    <?php if ($hayFiltros || $sucursal !== ''): ?>
         <a class="btn btn-outline" href="<?= ruta('admin_reportes', ['desde' => $desde, 'hasta' => $hasta]) ?>"><?= icon('trash', 14) ?> Limpiar</a>
     <?php endif; ?>
     <span style="flex:1"></span>
-    <a class="btn btn-outline" href="<?= ruta('admin_reportes', ['desde' => $desde, 'hasta' => $hasta, 'export' => 'compras']) ?>"><?= icon('download', 16) ?> CSV compras</a>
-    <a class="btn btn-outline" href="<?= ruta('admin_reportes', ['desde' => $desde, 'hasta' => $hasta, 'export' => 'productos']) ?>"><?= icon('download', 16) ?> CSV productos</a>
-    <a class="btn btn-outline" href="<?= ruta('admin_reportes', ['desde' => $desde, 'hasta' => $hasta, 'export' => 'servicios']) ?>"><?= icon('download', 16) ?> CSV servicios</a>
+    <a class="btn btn-primary" href="<?= ruta('admin_reportes', ['desde' => $desde, 'hasta' => $hasta, 'sucursal' => $sucursal, 'export' => 'excel']) ?>"><?= icon('download', 16) ?> Descargar Excel</a>
+    <a class="btn btn-outline" href="<?= ruta('admin_reportes', ['desde' => $desde, 'hasta' => $hasta, 'sucursal' => $sucursal, 'export' => 'compras']) ?>"><?= icon('download', 16) ?> CSV compras</a>
 </form>
+
+<?php if ($sucursal !== ''): ?>
+    <div class="alert" style="margin-bottom:1.2rem">
+        Mostrando los reportes de <b><?= e($sucursalNombre) ?></b>.
+        <a class="link" href="<?= ruta('admin_reportes', ['desde' => $desde, 'hasta' => $hasta]) ?>">Ver todas las sucursales</a>
+    </div>
+<?php endif; ?>
 
 <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
     <div class="kpi"><span class="ico"><?= icon('cart', 24) ?></span><div><small>Compras</small><strong><?= (int)($resumen['compras'] ?? 0) ?></strong></div></div>
@@ -94,6 +119,34 @@ $donut = $stops ? 'conic-gradient(' . implode(', ', $stops) . ')' : 'conic-gradi
     <div class="kpi"><span class="ico"><?= icon('calendar', 24) ?></span><div><small>Reservas</small><strong><?= (int)($reservas['total'] ?? 0) ?></strong></div></div>
     <div class="kpi"><span class="ico"><?= icon('check', 24) ?></span><div><small>Atendidas</small><strong><?= (int)($reservas['atendidas'] ?? 0) ?></strong><small class="muted"><?= (int)($reservas['canceladas'] ?? 0) ?> canceladas</small></div></div>
 </div>
+
+<section class="panel" style="margin-bottom:1.4rem">
+    <div class="panel-head">
+        <h3>Reportes por sucursal</h3>
+        <span class="muted" style="font-size:.85rem">Mismo detalle para cada sucursal</span>
+    </div>
+    <div class="sucursal-grid">
+        <?php foreach ($porSucursal as $s): ?>
+            <?php
+            $idS = (string)$s['id_sucursal'];
+            $paramsSuc = ['desde' => $desde, 'hasta' => $hasta, 'sucursal' => $idS];
+            ?>
+            <article class="suc-card">
+                <h4><?= e($s['nombre_sucursal']) ?></h4>
+                <div class="suc-monto"><?= bs($s['monto']) ?></div>
+                <small class="muted">ingresos en el período</small>
+                <div class="suc-meta"><span>Compras</span><b><?= (int)$s['compras'] ?></b></div>
+                <div class="suc-meta"><span>Reservas</span><b><?= (int)$s['reservas'] ?></b></div>
+                <div class="suc-meta"><span>Atendidas</span><b><?= (int)$s['atendidas'] ?></b></div>
+                <div class="suc-meta"><span>Canceladas</span><b><?= (int)$s['canceladas'] ?></b></div>
+                <a class="btn btn-outline btn-sm" style="margin-top:.9rem;width:100%" href="<?= ruta('admin_reportes', $paramsSuc) ?>">Ver reporte de esta sucursal</a>
+            </article>
+        <?php endforeach; ?>
+        <?php if ($porSucursal === []): ?>
+            <?= vacio('No hay sucursales registradas.', 'pin') ?>
+        <?php endif; ?>
+    </div>
+</section>
 
 <div class="panel-grid">
     <section class="panel">
@@ -214,6 +267,29 @@ $donut = $stops ? 'conic-gradient(' . implode(', ', $stops) . ')' : 'conic-gradi
         <tbody>
         <?php foreach ($topClientes as $t): ?>
             <tr><td><?= e($t['cliente']) ?></td><td><?= (int)$t['compras'] ?></td><td><?= (int)$t['reservas'] ?></td><td><b><?= bs($t['gastado']) ?></b></td></tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
+</section>
+
+<section class="panel" style="margin-top:1.4rem">
+    <div class="panel-head"><h3>Promociones vigentes</h3><span class="muted" style="font-size:.85rem">Vinculadas en la BD a productos y servicios</span></div>
+    <?php if (empty($promociones)): ?>
+        <?= vacio('No hay promociones vigentes.', 'heart') ?>
+    <?php else: ?>
+    <table class="table">
+        <thead><tr><th>Promoción</th><th>Artículo</th><th>Precio original</th><th>Precio promo</th><th>Descuento</th><th>Vence</th></tr></thead>
+        <tbody>
+        <?php foreach ($promociones as $promo): ?>
+            <tr>
+                <td><b><?= e($promo['nombre']) ?></b><br><small class="muted"><?= e($promo['descripcion'] ?? '') ?></small></td>
+                <td><?= e($promo['articulo'] ?? 'General') ?><br><small class="muted"><?= e($promo['tipo_articulo'] ?? '') ?></small></td>
+                <td><s class="muted"><?= bs($promo['precio_original']) ?></s></td>
+                <td><b><?= bs($promo['precio_promocional']) ?></b></td>
+                <td><?= number_format((float)($promo['descuento'] ?? 0), 0) ?>%</td>
+                <td><?= e(date('d/m/Y', strtotime((string)$promo['fecha_fin']))) ?></td>
+            </tr>
         <?php endforeach; ?>
         </tbody>
     </table>
