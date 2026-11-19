@@ -42,6 +42,7 @@ $panelStaff = ($u['id_rol'] ?? '') === 'ROL02' ? 'empleado_dashboard' : 'admin_d
             <?php endif; ?>
         </nav>
         <div class="nav-actions">
+            <?= btn_regresar() ?>
             <?php if (!$esStaff): ?>
             <a href="<?= ruta('carrito') ?>" class="cart-link" aria-label="Carrito">
                 <?= icon('cart', 20) ?>

@@ -39,8 +39,12 @@ function emp_item_menu(string $vista, string $icono, string $texto, string $acti
     <link rel="stylesheet" href="<?= BASE_URL ?>/css/style.css">
 </head>
 <body>
+<div class="sidebar-overlay" data-sidebar-overlay></div>
 <div class="admin">
     <aside class="side">
+        <div style="display:flex;justify-content:flex-end">
+            <button class="ic-btn sidebar-close" type="button" data-sidebar-close aria-label="Cerrar menú"><?= icon('arrow-left', 18) ?></button>
+        </div>
         <?= logo(true) ?>
 
         <div class="branch-chip">
@@ -71,8 +75,13 @@ function emp_item_menu(string $vista, string $icono, string $texto, string $acti
     <div class="main">
         <div class="topbar">
             <div class="search">
+                <button class="ic-btn sidebar-toggle" type="button" data-sidebar-open aria-label="Abrir menú"><?= icon('menu', 18) ?></button>
                 <?= icon('search', 18) ?>
                 <span class="input" style="cursor:default;color:var(--morado)"><?= e($titulo) ?></span>
+            </div>
+            <div class="acciones" style="display:flex;align-items:center;gap:.6rem">
+                <?= btn_inicio() ?>
+                <?= btn_regresar() ?>
             </div>
             <div style="display:flex;align-items:center;gap:1rem">
                 <?php if ($avisosPagos > 0): ?>
@@ -100,5 +109,5 @@ function emp_item_menu(string $vista, string $icono, string $texto, string $acti
         <div class="content">
             <?= flashes() ?>
             <?php if ($activo !== '' && !in_array($activo, ['empleado_dashboard', 'empleado_perfil'], true)): ?>
-                <p class="muted" style="margin-bottom:1rem;font-size:.9rem"><?= enlace_volver('empleado_dashboard', [], 'Volver al inicio') ?></p>
+                <p class="muted" style="margin-bottom:1rem;font-size:.9rem">Estás en: <b><?= e($titulo) ?></b> · <?= enlace_volver('empleado_dashboard', [], 'Ir al inicio') ?></p>
             <?php endif; ?>

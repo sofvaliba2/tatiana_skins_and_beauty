@@ -33,7 +33,9 @@ $editar = $editar ?? null;
             <tbody>
             <?php foreach ($productos as $p): $bajo = (int)$p['cantidad'] <= 3; ?>
                 <tr>
-                    <td><div class="person"><span class="cart-thumb" style="width:40px;height:40px;border-radius:10px"><?= frasco() ?></span><b><?= e($p['nombre_producto']) ?></b></div></td>
+                    <td><div class="person"><span class="cart-thumb" style="width:40px;height:40px;border-radius:10px"><?= frasco() ?></span><b><?= e($p['nombre_producto']) ?></b>
+                        <?php if (isset($p['activo']) && (int)$p['activo'] === 0): ?><span class="badge-st st-cancelada" style="margin-left:.4rem">Inactivo</span><?php endif; ?>
+                    </div></td>
                     <td><?= e($p['nombre_categoria'] ?? 'Sin categoría') ?></td>
                     <td><?= bs($p['precio']) ?></td>
                     <td>
@@ -43,8 +45,27 @@ $editar = $editar ?? null;
                         </div>
                     </td>
                     <td><div class="acts">
-                        <a class="ic-btn" href="<?= ruta('admin_inventario', ['editar' => $p['id_producto'], 'q' => $q ?? '']) ?>" aria-label="Editar"><?= icon('edit', 16) ?></a>
-                        <a class="ic-btn" href="<?= ruta('producto', ['id' => $p['id_producto']]) ?>" target="_blank" title="Ver en la tienda"><?= icon('eye', 16) ?></a>
+                        <a class="ic-btn" href="<?= ruta('admin_inventario', ['editar' => $p['id_producto'], 'q' => $q ?? '']) ?>" aria-label="Editar" title="Editar"><?= icon('edit', 16) ?></a>
+                        <?php if ((int)($p['activo'] ?? 1) === 1): ?>
+                        <a class="ic-btn" href="<?= ruta('producto', ['id' => $p['id_producto']]) ?>" target="_blank" title="Ver detalles en la tienda"><?= icon('eye', 16) ?></a>
+                        <?php endif; ?>
+                        <?php if ((int)($p['activo'] ?? 1) === 1): ?>
+                            <form method="post" action="<?= ruta('admin_inventario') ?>" style="display:inline"<?= confirmar('¿Eliminar "' . $p['nombre_producto'] . '"? Si tiene compras o promociones asociadas se dará de baja en lugar de borrarse.') ?>>
+                                <?= csrf() ?>
+                                <input type="hidden" name="accion" value="eliminar">
+                                <input type="hidden" name="id_producto" value="<?= e($p['id_producto']) ?>">
+                                <input type="hidden" name="q" value="<?= e($q ?? '') ?>">
+                                <button class="ic-btn" type="submit" aria-label="Eliminar" title="Eliminar / dar de baja"><?= icon('trash', 16) ?></button>
+                            </form>
+                        <?php else: ?>
+                            <form method="post" action="<?= ruta('admin_inventario') ?>" style="display:inline">
+                                <?= csrf() ?>
+                                <input type="hidden" name="accion" value="reactivar">
+                                <input type="hidden" name="id_producto" value="<?= e($p['id_producto']) ?>">
+                                <input type="hidden" name="q" value="<?= e($q ?? '') ?>">
+                                <button class="ic-btn" type="submit" aria-label="Reactivar" title="Reactivar producto"><?= icon('check', 16) ?></button>
+                            </form>
+                        <?php endif; ?>
                     </div></td>
                 </tr>
             <?php endforeach; ?>
@@ -59,7 +80,7 @@ $editar = $editar ?? null;
         <?php if ($editar !== null): $e1 = $editar; ?>
             <p class="muted" style="font-size:.88rem;margin-bottom:1rem">Editando: <b><?= e($e1['nombre_producto']) ?></b> (<?= e($e1['id_producto']) ?>)</p>
         <?php endif; ?>
-        <form method="post" action="<?= ruta('admin_inventario') ?>" enctype="multipart/form-data">
+        <form method="post" action="<?= ruta('admin_inventario') ?>" enctype="multipart/form-data" data-guardar>
             <?= csrf() ?>
             <?php if ($editar !== null): ?><input type="hidden" name="id_producto" value="<?= e($editar['id_producto']) ?>"><?php endif; ?>
             <div class="field"><label>Nombre *</label><input class="input" name="nombre_producto" required maxlength="80" placeholder="Ej: Sérum humectante" value="<?= e($editar['nombre_producto'] ?? '') ?>"></div>
@@ -82,9 +103,9 @@ $editar = $editar ?? null;
             </div>
             <div style="display:flex;gap:.6rem">
                 <?php if ($editar !== null): ?>
-                    <a href="<?= ruta('admin_inventario', ['q' => $q ?? '']) ?>" class="btn btn-outline" style="flex:1">Cancelar</a>
+                    <a href="<?= ruta('admin_inventario', ['q' => $q ?? '']) ?>" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</a>
                 <?php else: ?>
-                    <button type="reset" class="btn btn-outline" style="flex:1">Cancelar</button>
+                    <button type="reset" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</button>
                 <?php endif; ?>
                 <button type="submit" class="btn btn-primary" style="flex:1"><?= $editar !== null ? 'Guardar' : 'Guardar producto' ?></button>
             </div>

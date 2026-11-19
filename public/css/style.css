@@ -529,3 +529,50 @@ textarea.input { resize: vertical; min-height: 100px; }
 @media (max-width: 760px) {
     .detalle-grid { grid-template-columns: 1fr !important; }
 }
+
+/* ===== Campos de contraseña con ojo mostrar/ocultar ===== */
+.password-field { position: relative; display: block; }
+.password-field .password-input { width: 100%; padding-right: 3rem !important; }
+.password-toggle {
+  position: absolute; right: .55rem; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.3rem; height: 2.3rem; padding: 0;
+  border: 0; border-radius: 50%; background: transparent;
+  color: var(--texto-suave); cursor: pointer; transition: background .2s ease, color .2s ease;
+}
+.password-toggle:hover { background: var(--lila-claro); color: var(--morado); }
+.password-toggle:focus-visible { outline: 2px solid var(--morado); outline-offset: 2px; }
+.password-toggle .eye-closed { display: none; }
+.password-field.is-visible .password-toggle .eye-open { display: none; }
+.password-field.is-visible .password-toggle .eye-closed { display: inline-flex; }
+
+/* ===== Navegación interna y acciones consistentes ===== */
+form.enviando { opacity: .72; pointer-events: none; }
+.acciones { display: flex; gap: .55rem; align-items: center; flex-wrap: wrap; }
+.acciones .btn, .acciones .btn-sm { white-space: nowrap; }
+.btn-icon { width: 2.4rem; height: 2.4rem; padding: 0; border-radius: 50%; }
+.btn-regresar { background: var(--lila-suave); color: var(--morado); border-color: var(--lila); }
+.btn-regresar:hover { background: var(--lila-claro); }
+.barra-acciones { display: flex; gap: .6rem; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 1.2rem; }
+
+/* Menú lateral (sidebar) compartido por admin y empleado */
+.side { transition: transform .25s ease; }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(42,33,80,.45); z-index: 89; }
+.sidebar-toggle, .sidebar-close { display: none; align-items: center; justify-content: center; }
+@media (max-width: 820px) {
+  .side {
+    position: fixed; left: 0; top: 0; bottom: 0; width: min(290px, 85vw);
+    height: 100vh; z-index: 90; flex-direction: column; flex-wrap: nowrap;
+    transform: translateX(-102%); box-shadow: none;
+  }
+  .side .grp, .side .quote { display: block; }
+  .side .logo { padding: 0 .6rem 1.6rem; }
+  .sidebar-abierta .side { transform: translateX(0); box-shadow: 0 0 40px rgba(42,33,80,.35); }
+  .sidebar-abierta .sidebar-overlay { display: block; }
+  .sidebar-toggle, .sidebar-close { display: inline-flex; }
+  .main { grid-column: 1; }
+}
+@media (max-width: 640px) {
+  .barra-acciones, .acciones { width: 100%; }
+  .barra-acciones .btn, .acciones .btn { flex: 1 1 auto; }
+}

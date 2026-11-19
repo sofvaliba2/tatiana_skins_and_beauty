@@ -108,7 +108,7 @@ $hayFiltros = ($fecha ?? '') !== '' || $mes !== '' || $anio !== '';
 <aside class="panel">
     <div class="panel-head"><h3><?= icon('plus', 18) ?> Registrar venta</h3></div>
     <p class="muted" style="font-size:.85rem;margin-bottom:1rem">Venta directa en mostrador: se descuenta del stock automáticamente.</p>
-    <form method="post" action="<?= ruta('admin_ventas') ?>">
+    <form method="post" action="<?= ruta('admin_ventas') ?>" data-guardar>
         <?= csrf() ?>
         <div class="field">
             <label>Cliente *</label>

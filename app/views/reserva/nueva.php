@@ -55,7 +55,7 @@ $preguntasZona = [
                 <a class="btn btn-outline" href="<?= ruta('home') ?>">Volver al inicio</a>
             </div>
         <?php else: ?>
-        <form method="post" action="<?= ruta('reserva_nueva') ?>" class="book-layout" id="form-reserva">
+        <form method="post" action="<?= ruta('reserva_nueva') ?>" class="book-layout" id="form-reserva" data-guardar>
             <?= csrf() ?>
             <div class="form-card">
                 <div class="field">

@@ -41,11 +41,7 @@ $titulo = 'Ingresar';
                     <input class="input<?= clase_campo($errores, 'correo') ?>" type="email" id="correo" name="correo" placeholder="tucorreo@gmail.com" required autocomplete="email" value="<?= e($_POST['correo'] ?? '') ?>">
                     <?= error_campo($errores, 'correo') ?>
                 </div>
-                <div class="field">
-                    <label for="password">Contraseña</label>
-                    <input class="input<?= clase_campo($errores, 'password') ?>" type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
-                    <?= error_campo($errores, 'password') ?>
-                </div>
+                <?= password_campo('password', $errores, 'Contraseña', '••••••••', 'current-password') ?>
                 <button class="btn btn-primary btn-block" type="submit">Ingresar</button>
             </form>
 

@@ -11,7 +11,7 @@ require __DIR__ . '/../layout/header.php';
 
         <div class="card" style="padding:2rem;margin-bottom:1.5rem">
             <h2 style="font-size:1.2rem;margin-bottom:1rem">Datos personales</h2>
-            <form method="post" action="<?= ruta('perfil') ?>">
+            <form method="post" action="<?= ruta('perfil') ?>" data-guardar>
                 <?= csrf() ?>
                 <input type="hidden" name="accion" value="datos">
                 <div class="grid-2" style="gap:1rem">
@@ -50,25 +50,13 @@ require __DIR__ . '/../layout/header.php';
 
         <div class="card" style="padding:2rem">
             <h2 style="font-size:1.2rem;margin-bottom:1rem">Cambiar contraseña</h2>
-            <form method="post" action="<?= ruta('perfil') ?>">
+            <form method="post" action="<?= ruta('perfil') ?>" data-guardar>
                 <?= csrf() ?>
                 <input type="hidden" name="accion" value="password">
-                <div class="field">
-                    <label for="password_actual">Contraseña actual *</label>
-                    <input class="input<?= clase_campo($errores, 'password_actual') ?>" type="password" id="password_actual" name="password_actual" required>
-                    <?= error_campo($errores, 'password_actual') ?>
-                </div>
+                <?= password_campo('password_actual', $errores, 'Contraseña actual *') ?>
                 <div class="grid-2" style="gap:1rem">
-                    <div class="field">
-                        <label for="password_nueva">Nueva contraseña * <small>(mín. 8 caracteres)</small></label>
-                        <input class="input<?= clase_campo($errores, 'password_nueva') ?>" type="password" id="password_nueva" name="password_nueva" required minlength="8">
-                        <?= error_campo($errores, 'password_nueva') ?>
-                    </div>
-                    <div class="field">
-                        <label for="password_rep">Repetir contraseña *</label>
-                        <input class="input<?= clase_campo($errores, 'password_rep') ?>" type="password" id="password_rep" name="password_rep" required>
-                        <?= error_campo($errores, 'password_rep') ?>
-                    </div>
+                    <?= password_campo('password_nueva', $errores, 'Nueva contraseña * <small>(mín. 8 caracteres)</small>', '••••••••', 'new-password', true, 8) ?>
+                    <?= password_campo('password_rep', $errores, 'Repetir contraseña *', '••••••••', 'new-password') ?>
                 </div>
                 <button class="btn btn-primary" type="submit" style="margin-top:1rem">Actualizar contraseña</button>
             </form>

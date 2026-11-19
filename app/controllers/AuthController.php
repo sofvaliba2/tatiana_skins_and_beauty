@@ -4,8 +4,11 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Auth;
+use App\Core\Correo;
 use App\Core\Flash;
 use App\Core\Validate;
+use App\Models\RecuperacionPassword;
+use App\Models\SeguridadLogin;
 use App\Models\Usuario;
 
 final class AuthController extends Controller
@@ -14,6 +17,9 @@ final class AuthController extends Controller
     {
         $errores = [];
         $next = $this->texto('next');
+        $correo = mb_strtolower(trim((string)$_POST['correo'] ?? ''));
+        $ip = SeguridadLogin::ip();
+        $estado = $correo !== '' ? SeguridadLogin::estado($correo, $ip) : ['bloqueado' => false];
 
         if ($this->esPost()) {
             $v = Validate::make()->correo('correo');
@@ -22,11 +28,20 @@ final class AuthController extends Controller
             }
             if ($v->fallido()) {
                 $errores = $v->errores();
+            } elseif (!empty($estado['bloqueado'])) {
+                // El bloqueo se comprueba en servidor antes de validar la contraseña.
+                $errores['_general'][] = SeguridadLogin::mensajeBloqueo((int)$estado['segundos']);
             } else {
-                $ok = Auth::intentar((string)$_POST['correo'], (string)$_POST['password']);
+                $ok = Auth::intentar($correo, (string)$_POST['password']);
                 if (!$ok) {
-                    $errores['_general'][] = 'Correo o contraseña incorrectos.';
+                    $estado = SeguridadLogin::registrarFallo($correo, $ip);
+                    $errores['_general'][] = !empty($estado['bloqueado'])
+                        ? SeguridadLogin::mensajeBloqueo((int)$estado['segundos'])
+                        : 'Correo o contraseña incorrectos. Intento ' . (int)$estado['intentos']
+                            . ' de ' . SeguridadLogin::MAX_INTENTOS . '.';
                 } else {
+                    // Inicio de sesión correcto: se borra por completo el registro.
+                    SeguridadLogin::reiniciar($correo, $ip);
                     $u = Auth::usuario();
                     Flash::ok('Bienvenido(a), ' . $u['nombre'] . '.');
                     $porDefecto = match ($u['id_rol']) {
@@ -93,16 +108,85 @@ final class AuthController extends Controller
     {
         $errores = [];
         $enviado = false;
+        $devLink = '';
         if ($this->esPost()) {
             $v = Validate::make()->correo('correo');
             if ($v->fallido()) {
                 $errores = $v->errores();
             } else {
                 $enviado = true;
-                Flash::ok('Si el correo existe, el personal del centro te ayudará a restablecer tu contraseña.');
+                RecuperacionPassword::limpiar();
+                $solicitud = RecuperacionPassword::crear((string)$_POST['correo']);
+                if ($solicitud !== null) {
+                    $enlace = Correo::enlaceRestablecer($solicitud['token']);
+                    $cuenta = Usuario::cuentaPorCorreo($solicitud['correo']);
+                    $nombre = (string)($cuenta['nombre'] ?? '');
+                    $html = Correo::plantillaRecuperacion($nombre, $enlace);
+                    if (!Correo::enviar($solicitud['correo'], 'Restablece tu contraseña', $html)) {
+                        error_log('[RECUPERACION] No se pudo enviar el correo a ' . $solicitud['correo']);
+                    }
+                    // En desarrollo se muestra el enlace para poder probar sin SMTP.
+                    if (MAIL_DEV_LINK) {
+                        $devLink = $enlace;
+                    }
+                }
+                // Mensaje genérico: nunca revela si el correo está registrado.
+                Flash::ok('Si el correo está registrado, enviamos un enlace para restablecer tu contraseña. '
+                    . 'Revisa tu bandeja de entrada y spam. El enlace vence en '
+                    . RecuperacionPassword::MINUTOS_VIGENCIA . ' minutos.');
             }
         }
-        $this->vista('auth/recuperar.php', ['errores' => $errores, 'enviado' => $enviado]);
+        $this->vista('auth/recuperar.php', [
+            'errores' => $errores,
+            'enviado' => $enviado,
+            'devLink' => $devLink,
+        ]);
+    }
+
+    /** Pantalla y proceso para establecer una nueva contraseña con el token del correo. */
+    public function restablecer(): void
+    {
+        $token = $this->texto('token', (string)($_POST['token'] ?? ''));
+        $registro = RecuperacionPassword::validar($token);
+        $errores = [];
+
+        if ($registro === null) {
+            $this->vista('auth/restablecer.php', [
+                'errores' => [],
+                'invalido' => true,
+                'token' => '',
+            ]);
+            return;
+        }
+
+        if ($this->esPost()) {
+            $v = Validate::make()
+                ->passwordSegura('password')
+                ->coincide('password2', 'password', 'Las contraseñas no coinciden.');
+            if ($v->fallido()) {
+                $errores = $v->errores();
+            } else {
+                try {
+                    Usuario::cambiarPassword((string)$registro['id_usuario'], (string)$_POST['password']);
+                    RecuperacionPassword::consumir($token, (string)$registro['id_usuario']);
+                    SeguridadLogin::reiniciar(
+                        Usuario::correoDe((string)$registro['id_usuario']),
+                        SeguridadLogin::ip()
+                    );
+                    Flash::ok('Tu contraseña fue actualizada. Ya puedes iniciar sesión con la nueva.');
+                    $this->redirigir('login');
+                } catch (\Throwable $e) {
+                    error_log('[RESTABLECER] ' . $e->getMessage());
+                    $errores['_general'][] = 'No se pudo actualizar la contraseña. Solicita un nuevo enlace.';
+                }
+            }
+        }
+
+        $this->vista('auth/restablecer.php', [
+            'errores' => $errores,
+            'invalido' => false,
+            'token' => $token,
+        ]);
     }
 
     /** Destinos internos válidos para cada rol tras iniciar sesión. */

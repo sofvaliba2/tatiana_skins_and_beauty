@@ -180,6 +180,11 @@ final class AdminController extends Controller
         $pagina = max(1, $this->entero('p', 1));
 
         if ($this->esPost()) {
+            $accion = $this->texto('accion');
+            if ($accion === 'eliminar' || $accion === 'reactivar') {
+                $this->procesarBajaProducto($accion);
+                return;
+            }
             $this->guardarProducto();
         }
 
@@ -193,10 +198,63 @@ final class AdminController extends Controller
             }
         }
 
-        ['filas' => $productos, 'total' => $total] = Producto::buscar($q, '', $pagina, self::POR_PAGINA);
+        ['filas' => $productos, 'total' => $total] = Producto::buscar($q, '', $pagina, self::POR_PAGINA, true);
         $categorias = Producto::categorias();
 
         $this->vista('admin/inventario.php', compact('productos', 'categorias', 'q', 'pagina', 'total', 'editar'));
+    }
+
+    /** Eliminación física o baja lógica de productos (solo administradores). */
+    private function procesarBajaProducto(string $accion): void
+    {
+        $q = $this->texto('q');
+        if (!Auth::esAdmin()) {
+            Flash::error('No tienes permiso para modificar productos.');
+            $this->redirigir('admin_inventario', array_filter(['q' => $q]));
+        }
+
+        $id = $this->texto('id_producto');
+        $producto = Producto::porId($id);
+        if ($producto === null) {
+            Flash::error('El producto ya no existe.');
+            $this->redirigir('admin_inventario', array_filter(['q' => $q]));
+        }
+
+        if ($accion === 'reactivar') {
+            if (Producto::activar($id)) {
+                Flash::ok('Producto reactivado y disponible nuevamente.');
+            } else {
+                Flash::error('No se pudo reactivar el producto.');
+            }
+            $this->redirigir('admin_inventario', array_filter(['q' => $q]));
+        }
+
+        $relaciones = Producto::relaciones($id);
+        $historial = array_sum($relaciones);
+        if ($historial > 0) {
+            // Hay compras, promociones o servicios asociados: baja lógica.
+            $detalle = [];
+            if ($relaciones['compras'] > 0) {
+                $detalle[] = $relaciones['compras'] . ' compra(s)';
+            }
+            if ($relaciones['promociones'] > 0) {
+                $detalle[] = $relaciones['promociones'] . ' promoción(es)';
+            }
+            if ($relaciones['servicios'] > 0) {
+                $detalle[] = $relaciones['servicios'] . ' servicio(s)';
+            }
+            if (Producto::desactivar($id)) {
+                Flash::ok('El producto tiene historial (' . implode(', ', $detalle)
+                    . '), por eso se dio de baja en vez de eliminarse. Su información se conserva.');
+            } else {
+                Flash::error('No se pudo dar de baja el producto.');
+            }
+        } elseif (Producto::eliminar($id)) {
+            Flash::ok('Producto eliminado correctamente.');
+        } else {
+            Flash::error('No se pudo eliminar el producto.');
+        }
+        $this->redirigir('admin_inventario', array_filter(['q' => $q]));
     }
 
     private function guardarProducto(): void

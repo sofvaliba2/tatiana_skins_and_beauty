@@ -14,9 +14,12 @@ final class Producto extends Model
         return self::all('SELECT * FROM categoria_producto ORDER BY nombre_categoria');
     }
 
-    public static function buscar(string $q, string $categoria, int $pagina, int $porPagina): array
+    public static function buscar(string $q, string $categoria, int $pagina, int $porPagina, bool $incluirInactivos = false): array
     {
         $sql = self::SELECT . ' WHERE 1';
+        if (!$incluirInactivos) {
+            $sql .= ' AND p.activo = 1';
+        }
         $params = [];
         if ($q !== '') {
             $sql .= ' AND (p.nombre_producto LIKE ? OR p.descripcion LIKE ?)';
@@ -40,7 +43,7 @@ final class Producto extends Model
     public static function relacionados(string $idCategoria, string $idExcluir, int $limite = 4): array
     {
         return self::all(
-            self::SELECT . ' WHERE p.id_categoria = ? AND p.id_producto <> ? LIMIT ' . $limite,
+            self::SELECT . ' WHERE p.activo = 1 AND p.id_categoria = ? AND p.id_producto <> ? LIMIT ' . $limite,
             [$idCategoria, $idExcluir]
         );
     }
@@ -51,6 +54,7 @@ final class Producto extends Model
             'SELECT p.*, cp.nombre_categoria AS categoria
              FROM producto p
              LEFT JOIN categoria_producto cp ON cp.id_categoria = p.id_categoria
+             WHERE p.activo = 1
              ORDER BY p.precio DESC
              LIMIT ' . $limite
         );
@@ -58,14 +62,14 @@ final class Producto extends Model
 
     public static function conStock(int $limite = 6): array
     {
-        return self::all(self::SELECT . ' WHERE p.cantidad > 0 ORDER BY p.precio DESC LIMIT ' . $limite);
+        return self::all(self::SELECT . ' WHERE p.activo = 1 AND p.cantidad > 0 ORDER BY p.precio DESC LIMIT ' . $limite);
     }
 
     public static function paraCarrito(string $id): ?array
     {
         return self::one(
             'SELECT id_producto, nombre_producto, descripcion, precio, cantidad AS stock, imagen_url
-             FROM producto WHERE id_producto = ?',
+             FROM producto WHERE id_producto = ? AND activo = 1',
             [$id]
         );
     }
@@ -75,19 +79,20 @@ final class Producto extends Model
         return (int)self::value('SELECT cantidad FROM producto WHERE id_producto = ?', [$id]);
     }
 
-    public static function lista(): array
+    public static function lista(bool $incluirInactivos = false): array
     {
-        return self::all('SELECT id_producto, nombre_producto, precio, cantidad FROM producto ORDER BY nombre_producto');
+        $where = $incluirInactivos ? '' : ' WHERE activo = 1';
+        return self::all('SELECT id_producto, nombre_producto, precio, cantidad FROM producto' . $where . ' ORDER BY nombre_producto');
     }
 
     public static function stockBajo(int $umbral = 3): array
     {
-        return self::all(self::SELECT . ' WHERE p.cantidad <= ? ORDER BY p.cantidad ASC', [$umbral]);
+        return self::all(self::SELECT . ' WHERE p.activo = 1 AND p.cantidad <= ? ORDER BY p.cantidad ASC', [$umbral]);
     }
 
     public static function contarStockBajo(int $umbral = 3): int
     {
-        return (int)self::value('SELECT COUNT(*) FROM producto WHERE cantidad <= ?', [$umbral]);
+        return (int)self::value('SELECT COUNT(*) FROM producto WHERE activo = 1 AND cantidad <= ?', [$umbral]);
     }
 
     public static function descontarStock(string $id, int $cantidad): void
@@ -112,6 +117,50 @@ final class Producto extends Model
                 return [$idEditar, false];
             }
             return [Ids::insertarConCodigo('producto', 'id_producto', 'PROD', 2, $datos), true];
+        });
+    }
+
+    /**
+     * Cuenta las relaciones históricas del producto. Si alguna existe, no se
+     * debe borrar físicamente: se aplica baja lógica para conservar compras,
+     * promociones y recomendaciones de servicios.
+     */
+    public static function relaciones(string $id): array
+    {
+        return [
+            'compras' => (int)self::value('SELECT COUNT(*) FROM detalle_compra WHERE id_producto = ?', [$id]),
+            'promociones' => (int)self::value('SELECT COUNT(*) FROM promocion WHERE id_producto = ?', [$id]),
+            'servicios' => (int)self::value('SELECT COUNT(*) FROM servicio_producto WHERE id_producto = ?', [$id]),
+        ];
+    }
+
+    public static function tieneHistorial(string $id): bool
+    {
+        return array_sum(self::relaciones($id)) > 0;
+    }
+
+    /** Baja lógica: el producto deja de mostrarse pero su historial se conserva. */
+    public static function desactivar(string $id): bool
+    {
+        return self::run('UPDATE producto SET activo = 0 WHERE id_producto = ? AND activo = 1', [$id]) > 0;
+    }
+
+    public static function activar(string $id): bool
+    {
+        return self::run('UPDATE producto SET activo = 1 WHERE id_producto = ? AND activo = 0', [$id]) > 0;
+    }
+
+    /**
+     * Eliminación física solo permitida cuando no hay relaciones históricas.
+     * Devuelve false si el producto tiene historial (el llamador aplica baja lógica).
+     */
+    public static function eliminar(string $id): bool
+    {
+        if (self::tieneHistorial($id)) {
+            return false;
+        }
+        return self::transaccion(function () use ($id) {
+            return self::run('DELETE FROM producto WHERE id_producto = ?', [$id]) > 0;
         });
     }
 }

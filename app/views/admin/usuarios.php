@@ -48,7 +48,7 @@ if (($_GET['editar'] ?? '') !== '') {
 
     <aside class="panel">
         <div class="panel-head"><h3><?= $editar !== null ? 'Editar usuario' : 'Nuevo usuario' ?></h3></div>
-        <form method="post" action="<?= ruta('admin_usuarios') ?>">
+        <form method="post" action="<?= ruta('admin_usuarios') ?>" data-guardar>
             <?= csrf() ?>
             <?php if ($editar !== null): ?><input type="hidden" name="id_usuario" value="<?= e($editar['id_usuario']) ?>"><?php endif; ?>
             <div class="field"><label>Nombre *</label><input class="input" name="nombre" required maxlength="50" value="<?= e($editar['nombre'] ?? '') ?>"></div>
@@ -72,16 +72,16 @@ if (($_GET['editar'] ?? '') !== '') {
             </div>
             <?php if ($editar === null): ?>
                 <div class="field"><label>Correo electrónico *</label><input class="input" type="email" name="correo" required placeholder="personal@tatiana.bo"></div>
-                <div class="field"><label>Contraseña * <small>(mín. 8)</small></label><input class="input" type="password" name="password" required minlength="8"></div>
+                <?= password_campo('password', [], 'Contraseña * <small>(mín. 8)</small>', '••••••••', 'new-password', true, 8) ?>
             <?php else: ?>
                 <div class="field"><label>Correo</label><input class="input" value="<?= e($editar['correo'] ?? '') ?>" disabled></div>
-                <div class="field"><label>Nueva contraseña <small>(opcional, mín. 8)</small></label><input class="input" type="password" name="nueva_password" minlength="8" placeholder="Dejar vacío para no cambiar"></div>
+                <?= password_campo('nueva_password', [], 'Nueva contraseña <small>(opcional, mín. 8)</small>', 'Dejar vacío para no cambiar', 'new-password', false, 8) ?>
             <?php endif; ?>
             <div style="display:flex;gap:.6rem;margin-top:1rem">
                 <?php if ($editar !== null): ?>
-                    <a href="<?= ruta('admin_usuarios') ?>" class="btn btn-outline" style="flex:1">Cancelar</a>
+                    <a href="<?= ruta('admin_usuarios') ?>" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</a>
                 <?php else: ?>
-                    <button type="reset" class="btn btn-outline" style="flex:1">Cancelar</button>
+                    <button type="reset" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</button>
                 <?php endif; ?>
                 <button type="submit" class="btn btn-primary" style="flex:1"><?= $editar !== null ? 'Guardar' : 'Crear usuario' ?></button>
             </div>

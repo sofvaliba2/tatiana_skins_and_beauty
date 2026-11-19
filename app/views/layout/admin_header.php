@@ -31,8 +31,12 @@ $rolTexto = ($u['id_rol'] ?? '') === 'ROL01' ? 'Administrador' : 'Personal';
     <link rel="stylesheet" href="<?= BASE_URL ?>/css/style.css">
 </head>
 <body>
+<div class="sidebar-overlay" data-sidebar-overlay></div>
 <div class="admin">
     <aside class="side">
+        <div style="display:flex;justify-content:flex-end">
+            <button class="ic-btn sidebar-close" type="button" data-sidebar-close aria-label="Cerrar menú"><?= icon('arrow-left', 18) ?></button>
+        </div>
         <?= logo(true) ?>
         <?= item_menu('admin_dashboard', 'home', 'Inicio', $activo) ?>
 
@@ -67,8 +71,13 @@ $rolTexto = ($u['id_rol'] ?? '') === 'ROL01' ? 'Administrador' : 'Personal';
     <div class="main">
         <div class="topbar">
             <div class="search">
+                <button class="ic-btn sidebar-toggle" type="button" data-sidebar-open aria-label="Abrir menú"><?= icon('menu', 18) ?></button>
                 <?= icon('search', 18) ?>
                 <span class="input" style="cursor:default;color:var(--morado)"><?= e($titulo) ?></span>
+            </div>
+            <div class="acciones" style="display:flex;align-items:center;gap:.6rem">
+                <?= btn_inicio() ?>
+                <?= btn_regresar() ?>
             </div>
             <div style="display:flex;align-items:center;gap:1rem">
                 <?php if ($avisosPendientes > 0): ?>
@@ -92,6 +101,6 @@ $rolTexto = ($u['id_rol'] ?? '') === 'ROL01' ? 'Administrador' : 'Personal';
         <div class="content">
             <?= flashes() ?>
             <?php if ($activo !== '' && !in_array($activo, ['admin_dashboard', 'admin_perfil', 'admin_promociones'], true)): ?>
-                <p class="muted" style="margin-bottom:1rem;font-size:.9rem"><?= enlace_volver('admin_dashboard', [], 'Volver al panel') ?></p>
+                <p class="muted" style="margin-bottom:1rem;font-size:.9rem">Estás en: <b><?= e($titulo) ?></b> · <?= enlace_volver('admin_dashboard', [], 'Ir al panel') ?></p>
             <?php endif; ?>
 

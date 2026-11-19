@@ -52,7 +52,7 @@ $editar = $editar ?? null;
 
     <aside class="panel">
         <div class="panel-head"><h3><?= $editar ? 'Editar cliente' : 'Nuevo cliente' ?></h3></div>
-        <form method="post" action="<?= ruta('admin_clientes') ?>">
+        <form method="post" action="<?= ruta('admin_clientes') ?>" data-guardar>
             <?= csrf() ?>
             <?php if ($editar !== null): ?>
                 <input type="hidden" name="id_usuario" value="<?= e($editar['id_usuario']) ?>">
@@ -65,16 +65,16 @@ $editar = $editar ?? null;
             <div class="field"><label>Fecha de nacimiento</label><input class="input" type="date" name="fecha_nacimiento" value="<?= e($editar['fecha_nacimiento'] ?? '') ?>"></div>
             <?php if ($editar === null): ?>
                 <div class="field"><label>Correo electrónico *</label><input class="input" type="email" name="correo" required placeholder="cliente@correo.com"></div>
-                <div class="field"><label>Contraseña * <small>(mín. 8 caracteres)</small></label><input class="input" type="password" name="password" required minlength="8"></div>
+                <?= password_campo('password', [], 'Contraseña * <small>(mín. 8 caracteres)</small>', '••••••••', 'new-password', true, 8) ?>
             <?php else: ?>
                 <div class="field"><label>Correo</label><input class="input" value="<?= e($editar['correo'] ?? '') ?>" disabled></div>
                 <p class="muted" style="font-size:.82rem">Para restablecer la contraseña del cliente, hazlo desde <b>Usuarios</b> o pide al administrador.</p>
             <?php endif; ?>
             <div style="display:flex;gap:.6rem;margin-top:1rem">
                 <?php if ($editar !== null): ?>
-                    <a href="<?= ruta('admin_clientes', ['q' => $q ?? '']) ?>" class="btn btn-outline" style="flex:1">Cancelar</a>
+                    <a href="<?= ruta('admin_clientes', ['q' => $q ?? '']) ?>" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</a>
                 <?php else: ?>
-                    <button type="reset" class="btn btn-outline" style="flex:1">Cancelar</button>
+                    <button type="reset" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</button>
                 <?php endif; ?>
                 <button type="submit" class="btn btn-primary" style="flex:1"><?= $editar ? 'Guardar' : 'Registrar' ?></button>
             </div>

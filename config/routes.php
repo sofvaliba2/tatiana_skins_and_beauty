@@ -32,6 +32,7 @@ return [
     'login'                => [AuthController::class, 'login', 'publico'],
     'registro'             => [AuthController::class, 'registro', 'publico'],
     'recuperar'            => [AuthController::class, 'recuperar', 'publico'],
+    'restablecer'          => [AuthController::class, 'restablecer', 'publico'],
     'logout'               => [AuthController::class, 'logout', 'publico'],
 
     // Panel del cliente

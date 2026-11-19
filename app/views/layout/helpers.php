@@ -66,6 +66,41 @@ function clase_campo(array $errores, string $campo): string
 }
 
 /**
+ * Campo de contraseña con botón para mostrar/ocultar (ojito).
+ * Centraliza el marcado para que todos los formularios mantengan el mismo
+ * comportamiento y estilo sin duplicar código.
+ */
+function password_campo(
+    string $campo,
+    array $errores = [],
+    string $etiqueta = 'Contraseña',
+    string $placeholder = '••••••••',
+    string $autocomplete = 'current-password',
+    bool $requerido = true,
+    int $minlength = 0,
+    string $hint = ''
+): string {
+    $id = preg_replace('/[^A-Za-z0-9_-]/', '_', $campo);
+    $html = '<div class="field">'
+        . '<label for="' . e($id) . '">' . $etiqueta . '</label>'
+        . '<div class="password-field">'
+        . '<input class="input password-input' . clase_campo($errores, $campo) . '" type="password" '
+        . 'id="' . e($id) . '" name="' . e($campo) . '" placeholder="' . e($placeholder) . '" '
+        . 'autocomplete="' . e($autocomplete) . '"'
+        . ($minlength > 0 ? ' minlength="' . $minlength . '"' : '')
+        . ($requerido ? ' required' : '') . '>'
+        . '<button class="password-toggle" type="button" data-password-toggle '
+        . 'aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar u ocultar contraseña">'
+        . '<span class="eye-open">' . icon('eye', 18) . '</span>'
+        . '<span class="eye-closed">' . icon('eye-off', 18) . '</span>'
+        . '</button></div>'
+        . error_campo($errores, $campo)
+        . ($hint !== '' ? '<span class="hint">' . e($hint) . '</span>' : '')
+        . '</div>';
+    return $html;
+}
+
+/**
  * Controles de paginación. Devuelve cadena vacía si todo cabe en una página.
  */
 function paginacion(string $vista, array $params, int $total, int $pagina, int $porPagina): string
@@ -112,6 +147,71 @@ function btn_volver(string $vista = 'home', array $params = [], string $texto = 
 function enlace_volver(string $vista = 'home', array $params = [], string $texto = 'Volver al inicio'): string
 {
     return '<a class="link" href="' . e(ruta($vista, $params)) . '">' . icon('arrow-left', 15) . ' ' . e($texto) . '</a>';
+}
+
+/** Panel principal según el rol del usuario autenticado. */
+function destino_inicio(): string
+{
+    $rol = \App\Core\Auth::usuario()['id_rol'] ?? '';
+    return match ($rol) {
+        'ROL01' => 'admin_dashboard',
+        'ROL02' => 'empleado_dashboard',
+        'ROL03' => 'panel',
+        default => 'home',
+    };
+}
+
+/**
+ * Destino del botón "Regresar": la última pantalla interna válida.
+ * Si no hay una ruta anterior válida (o el rol ya no tiene permiso),
+ * devuelve el panel principal correspondiente al rol.
+ */
+function ruta_regresar(): array
+{
+    $porDefecto = ['v' => destino_inicio(), 'params' => []];
+    $anterior = $_SESSION['ruta_anterior'] ?? null;
+    if (!is_array($anterior) || empty($anterior['v']) || !is_string($anterior['v'])) {
+        return $porDefecto;
+    }
+
+    $rutas = require BASE_PATH . '/config/routes.php';
+    if (!isset($rutas[$anterior['v']])) {
+        return $porDefecto;
+    }
+    $nivel = $rutas[$anterior['v']][2];
+    $aut = \App\Core\Auth::usuario();
+    $rol = (string)($aut['id_rol'] ?? '');
+    $permitido = match ($nivel) {
+        'publico' => true,
+        'autenticado' => $aut !== null,
+        'admin' => $rol === 'ROL01',
+        'empleado' => $rol === 'ROL02',
+        'cliente' => $rol === 'ROL03',
+        'cliente_personal', 'personal' => in_array($rol, ['ROL01', 'ROL02', 'ROL03'], true),
+        default => false,
+    };
+    if (!$permitido) {
+        return $porDefecto;
+    }
+    return [
+        'v' => $anterior['v'],
+        'params' => is_array($anterior['params'] ?? null) ? $anterior['params'] : [],
+    ];
+}
+
+/** Botón "Regresar" con destino validado dentro del sistema. */
+function btn_regresar(string $texto = 'Regresar'): string
+{
+    $d = ruta_regresar();
+    return '<a class="btn btn-regresar btn-sm" href="' . e(ruta($d['v'], $d['params'])) . '">'
+        . icon('arrow-left', 16) . ' ' . e($texto) . '</a>';
+}
+
+/** Botón "Inicio" hacia el panel del rol correspondiente. */
+function btn_inicio(): string
+{
+    return '<a class="btn btn-outline btn-sm" href="' . e(ruta(destino_inicio())) . '">'
+        . icon('home', 16) . ' Inicio</a>';
 }
 
 /** Estado vacío cuando una tabla/lista no tiene datos. */
@@ -243,6 +343,7 @@ function icon(string $n, int $s = 22): string
         'edit'     => '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/>',
         'trash'    => '<path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"/>',
         'eye'      => '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>',
+        'eye-off'  => '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M14.12 14.12a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/>',
         'check'    => '<path d="M5 12l5 5L20 7"/>',
         'clock'    => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
         'sparkle'  => '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"/>',

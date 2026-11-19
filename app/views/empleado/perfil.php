@@ -22,7 +22,7 @@ $nombreSucursal = (string)($sucursal_actual['nombre_sucursal'] ?? 'Sin sucursal 
 <div class="split">
     <section class="panel">
         <div class="panel-head"><h3>Datos personales</h3></div>
-        <form method="post" action="<?= ruta('empleado_perfil') ?>">
+        <form method="post" action="<?= ruta('empleado_perfil') ?>" data-guardar>
             <?= csrf() ?>
             <input type="hidden" name="accion" value="datos">
             <div class="form-grid">
@@ -62,24 +62,12 @@ $nombreSucursal = (string)($sucursal_actual['nombre_sucursal'] ?? 'Sin sucursal 
 
     <aside class="panel">
         <div class="panel-head"><h3><?= icon('key', 18) ?> Cambiar contraseña</h3></div>
-        <form method="post" action="<?= ruta('empleado_perfil') ?>">
+        <form method="post" action="<?= ruta('empleado_perfil') ?>" data-guardar>
             <?= csrf() ?>
             <input type="hidden" name="accion" value="password">
-            <div class="field">
-                <label>Contraseña actual *</label>
-                <input class="input<?= clase_campo($errores, 'password_actual') ?>" type="password" name="password_actual" required>
-                <?= error_campo($errores, 'password_actual') ?>
-            </div>
-            <div class="field">
-                <label>Nueva contraseña * <small>(mín. 8)</small></label>
-                <input class="input<?= clase_campo($errores, 'password_nueva') ?>" type="password" name="password_nueva" required minlength="8">
-                <?= error_campo($errores, 'password_nueva') ?>
-            </div>
-            <div class="field">
-                <label>Repetir contraseña *</label>
-                <input class="input<?= clase_campo($errores, 'password_rep') ?>" type="password" name="password_rep" required>
-                <?= error_campo($errores, 'password_rep') ?>
-            </div>
+            <?= password_campo('password_actual', $errores, 'Contraseña actual *') ?>
+            <?= password_campo('password_nueva', $errores, 'Nueva contraseña * <small>(mín. 8)</small>', '••••••••', 'new-password', true, 8) ?>
+            <?= password_campo('password_rep', $errores, 'Repetir contraseña *', '••••••••', 'new-password') ?>
             <button class="btn btn-primary btn-block" type="submit">Actualizar contraseña</button>
         </form>
         <?php if (!empty($errores)): ?>

@@ -24,7 +24,7 @@ $editar = $editar ?? null;
             </div>
             <p class="muted" style="font-size:.9rem"><?= e($s['direccion'] ?: 'Sin dirección') ?><?= $s['telefono'] ? ' · ' . e($s['telefono']) : '' ?></p>
 
-            <form method="post" action="<?= ruta('admin_sucursales') ?>">
+            <form method="post" action="<?= ruta('admin_sucursales') ?>" data-guardar>
                 <?= csrf() ?>
                 <input type="hidden" name="accion" value="horario">
                 <input type="hidden" name="id_sucursal" value="<?= e($s['id_sucursal']) ?>">
@@ -56,7 +56,7 @@ $editar = $editar ?? null;
 
     <aside class="panel">
         <div class="panel-head"><h3><?= $editar !== null ? 'Editar sucursal' : 'Nueva sucursal' ?></h3></div>
-        <form method="post" action="<?= ruta('admin_sucursales') ?>">
+        <form method="post" action="<?= ruta('admin_sucursales') ?>" data-guardar>
             <?= csrf() ?>
             <input type="hidden" name="accion" value="sucursal">
             <?php if ($editar !== null): ?><input type="hidden" name="id_sucursal" value="<?= e($editar['id_sucursal']) ?>"><?php endif; ?>
@@ -65,9 +65,9 @@ $editar = $editar ?? null;
             <div class="field"><label>Teléfono</label><input class="input" name="telefono" maxlength="20" value="<?= e($editar['telefono'] ?? '') ?>"></div>
             <div style="display:flex;gap:.6rem">
                 <?php if ($editar !== null): ?>
-                    <a href="<?= ruta('admin_sucursales') ?>" class="btn btn-outline" style="flex:1">Cancelar</a>
+                    <a href="<?= ruta('admin_sucursales') ?>" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</a>
                 <?php else: ?>
-                    <button type="reset" class="btn btn-outline" style="flex:1">Cancelar</button>
+                    <button type="reset" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</button>
                 <?php endif; ?>
                 <button type="submit" class="btn btn-primary" style="flex:1"><?= $editar !== null ? 'Guardar' : 'Crear' ?></button>
             </div>

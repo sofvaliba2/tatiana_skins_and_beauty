@@ -37,6 +37,21 @@ final class Router
         [$clase, $metodo, $nivel] = $this->rutas[$vista];
         $usuario = Auth::usuario();
 
+        // Seguimiento de la ruta interna anterior para los botones "Regresar".
+        // Solo se actualiza en GET (nunca en POST ni en descargas) para que un
+        // formulario o un export no reemplace el destino de regreso.
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET'
+            && !isset($_GET['export'])
+            && !in_array($vista, ['login', 'restablecer'], true)) {
+            $actual = $_SESSION['ruta_actual'] ?? '';
+            if (is_array($actual) && ($actual['v'] ?? '') !== '' && $actual['v'] !== $vista) {
+                $_SESSION['ruta_anterior'] = $actual;
+            }
+            $params = $_GET;
+            unset($params['v'], $params['export'], $params['token'], $params['_csrf']);
+            $_SESSION['ruta_actual'] = ['v' => $vista, 'params' => $params];
+        }
+
         if (!array_key_exists($nivel, self::NIVELES)) {
             error_log('[ROUTER] Nivel de acceso desconocido: ' . $nivel);
             (new ErroresController())->denegado();

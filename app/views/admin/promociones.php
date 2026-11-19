@@ -112,7 +112,7 @@ $etiquetasEstado = [
 
     <aside class="panel">
         <div class="panel-head"><h3><?= $editar !== null ? 'Editar promoción' : 'Nueva promoción' ?></h3></div>
-        <form method="post" action="<?= ruta('admin_promociones') ?>" enctype="multipart/form-data">
+        <form method="post" action="<?= ruta('admin_promociones') ?>" enctype="multipart/form-data" data-guardar>
             <?= csrf() ?>
             <input type="hidden" name="accion" value="guardar">
             <?php if ($editar !== null): ?><input type="hidden" name="id_promocion" value="<?= e($editar['id_promocion']) ?>"><?php endif; ?>
@@ -167,7 +167,7 @@ $etiquetasEstado = [
 
             <div style="display:flex;gap:.6rem;margin-top:1rem">
                 <?php if ($editar !== null): ?>
-                    <a href="<?= ruta('admin_promociones', ['q' => $q, 'estado' => $estadoFiltro]) ?>" class="btn btn-outline" style="flex:1">Cancelar</a>
+                    <a href="<?= ruta('admin_promociones', ['q' => $q, 'estado' => $estadoFiltro]) ?>" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</a>
                 <?php else: ?>
                     <button type="reset" class="btn btn-outline" style="flex:1">Limpiar</button>
                 <?php endif; ?>

@@ -5,3 +5,5 @@ public/uploads/comprobantes/*
 !public/uploads/comprobantes/.gitkeep
 public/uploads/productos/*
 !public/uploads/productos/.gitkeep
+# QR bancario: imagen local de pruebas, no versionar
+public/uploads/qr/*

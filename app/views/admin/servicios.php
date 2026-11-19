@@ -70,7 +70,7 @@ $editar = $editar ?? null;
 
     <aside class="panel">
         <div class="panel-head"><h3><?= $editar !== null ? 'Editar servicio' : 'Nuevo servicio' ?></h3></div>
-        <form method="post" action="<?= ruta('admin_servicios') ?>">
+        <form method="post" action="<?= ruta('admin_servicios') ?>" data-guardar>
             <?= csrf() ?>
             <input type="hidden" name="accion" value="servicio">
             <?php if ($editar !== null): ?><input type="hidden" name="id_servicio" value="<?= e($editar['id_servicio']) ?>"><?php endif; ?>
@@ -90,9 +90,9 @@ $editar = $editar ?? null;
             </div>
             <div style="display:flex;gap:.6rem;margin-top:1rem">
                 <?php if ($editar !== null): ?>
-                    <a href="<?= ruta('admin_servicios', ['q' => $q ?? '']) ?>" class="btn btn-outline" style="flex:1">Cancelar</a>
+                    <a href="<?= ruta('admin_servicios', ['q' => $q ?? '']) ?>" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</a>
                 <?php else: ?>
-                    <button type="reset" class="btn btn-outline" style="flex:1">Cancelar</button>
+                    <button type="reset" class="btn btn-outline" style="flex:1" data-cancelar>Cancelar</button>
                 <?php endif; ?>
                 <button type="submit" class="btn btn-primary" style="flex:1"><?= $editar !== null ? 'Guardar' : 'Crear servicio' ?></button>
             </div>

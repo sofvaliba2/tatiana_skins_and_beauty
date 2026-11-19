@@ -24,7 +24,7 @@ $hayMetodos = !empty($metodos);
 <div class="split">
     <section class="panel">
         <div class="panel-head"><h3><?= icon('cart', 18) ?> Registrar venta</h3></div>
-        <form method="post" action="<?= ruta('empleado_ventas') ?>" id="sale-form">
+        <form method="post" action="<?= ruta('empleado_ventas') ?>" id="sale-form" data-guardar>
             <?= csrf() ?>
             <input type="hidden" name="accion" value="venta">
 
