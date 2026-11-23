@@ -210,7 +210,7 @@ final class AdminSistemaController extends Controller
         $topClientes = Reporte::topClientes($desde, $hasta, 10, $filtro);
         $serie = Reporte::serie($desde, $hasta, $filtro);
         $porMetodo = Reporte::porMetodoPago($desde, $hasta, $filtro);
-        $porSucursal = Reporte::porSucursal($desde, $hasta);
+        $porSucursal = Reporte::porSucursal($desde, $hasta, $filtro);
         $promociones = Promocion::activas();
         $anios = $this->aniosReportes();
 
@@ -247,7 +247,8 @@ final class AdminSistemaController extends Controller
     private function exportarExcel(string $desde, string $hasta, string $sucursal, array $sucursales, array $promociones = []): void
     {
         $x = new Xlsx();
-        $porSucursal = Reporte::porSucursal($desde, $hasta);
+        $filtro = $sucursal === '' ? null : $sucursal;
+        $porSucursal = Reporte::porSucursal($desde, $hasta, $filtro);
         $rango = 'Desde ' . self::fechaLarga($desde) . ' hasta ' . self::fechaLarga($hasta)
             . '   ·   Sucursal: ' . self::nombreSucursal($sucursal, $sucursales);
 
@@ -257,7 +258,6 @@ final class AdminSistemaController extends Controller
         $x->fila($h, 2, [Xlsx::celda($rango, Xlsx::S_SUBTITLE)], 20);
         $x->fila($h, 3, [Xlsx::celda('Generado el ' . date('d/m/Y H:i'), Xlsx::S_SUBTITLE)], 18);
 
-        $filtro = $sucursal === '' ? null : $sucursal;
         $resumen = Reporte::resumenCompras($desde, $hasta, $filtro);
         $reservas = Reporte::resumenReservas($desde, $hasta, $filtro);
         $x->fila($h, 5, [$head('Compras'), $head('Ingresos tienda'), $head('Reservas'), $head('Atendidas')], 24);

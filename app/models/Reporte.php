@@ -172,8 +172,11 @@ final class Reporte extends Model
         return self::all($sql, $params);
     }
 
-    /** Resumen de cada sucursal con el mismo formato, más los registros sin sucursal. */
-    public static function porSucursal(string $desde, string $hasta): array
+    /**
+     * Resumen de cada sucursal con el mismo formato, más los registros sin sucursal.
+     * Si se indica una sucursal, solo devuelve esa fila (o la de "Sin sucursal").
+     */
+    public static function porSucursal(string $desde, string $hasta, ?string $sucursal = null): array
     {
         $columnas = static function (string $comp, string $res): string {
             return '(SELECT COUNT(*) FROM compra c WHERE c.fecha_compra BETWEEN ? AND ? AND ' . $comp . ') AS compras,
@@ -207,6 +210,13 @@ final class Reporte extends Model
                 'atendidas'       => (int)($sin['atendidas'] ?? 0),
                 'canceladas'      => (int)($sin['canceladas'] ?? 0),
             ];
+        }
+
+        if ($sucursal !== null && $sucursal !== '') {
+            $filas = array_values(array_filter(
+                $filas,
+                static fn (array $f): bool => (string)$f['id_sucursal'] === $sucursal
+            ));
         }
         return $filas;
     }
