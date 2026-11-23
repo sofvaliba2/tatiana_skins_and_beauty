@@ -85,14 +85,19 @@ final class Producto extends Model
         return self::all('SELECT id_producto, nombre_producto, precio, cantidad FROM producto' . $where . ' ORDER BY nombre_producto');
     }
 
+    /**
+     * Productos con poco stock. La consulta vive en MySQL:
+     * sp_productos_stock_bajo (ver database/migration_objetos_negocio.sql).
+     */
     public static function stockBajo(int $umbral = 3): array
     {
-        return self::all(self::SELECT . ' WHERE p.activo = 1 AND p.cantidad <= ? ORDER BY p.cantidad ASC', [$umbral]);
+        return self::llamar('sp_productos_stock_bajo', [$umbral]);
     }
 
+    /** Conteo de stock bajo mediante fn_contar_stock_bajo (MySQL). */
     public static function contarStockBajo(int $umbral = 3): int
     {
-        return (int)self::value('SELECT COUNT(*) FROM producto WHERE activo = 1 AND cantidad <= ?', [$umbral]);
+        return (int)self::value('SELECT fn_contar_stock_bajo(?)', [$umbral]);
     }
 
     public static function descontarStock(string $id, int $cantidad): void

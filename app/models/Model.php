@@ -37,6 +37,24 @@ abstract class Model
         return self::ejecutar($sql, $params)->rowCount();
     }
 
+    /**
+     * Ejecuta un procedimiento almacenado y devuelve sus filas.
+     * El nombre se valida para no interpolar SQL del usuario y se cierra el
+     * cursor porque MariaDB agrega un paquete de estado después del result set.
+     */
+    protected static function llamar(string $procedimiento, array $params = []): array
+    {
+        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $procedimiento)) {
+            throw new \InvalidArgumentException('Nombre de procedimiento no válido.');
+        }
+        $marcadores = $params === [] ? '' : implode(', ', array_fill(0, count($params), '?'));
+        $st = Database::pdo()->prepare("CALL {$procedimiento}({$marcadores})");
+        $st->execute($params);
+        $filas = $st->fetchAll();
+        $st->closeCursor();
+        return $filas;
+    }
+
     protected static function transaccion(callable $fn): mixed
     {
         Database::begin();

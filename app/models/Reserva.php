@@ -301,39 +301,16 @@ final class Reserva extends Model
         );
     }
 
+    /** Agenda del día calculada por sp_agenda_dia (MySQL). */
     public static function citasDelDia(string $fecha): array
     {
-        return self::all(
-            "SELECT r.id_reserva, r.hora, r.estado, r.estado_pago,
-                    CONCAT(u.nombre, ' ', u.ap_paterno) AS cliente,
-                    COALESCE(GROUP_CONCAT(s.nombre SEPARATOR ', '), 'Sin servicio') AS servicio
-             FROM reserva r
-             LEFT JOIN usuario u ON u.id_usuario = r.id_usuario
-             LEFT JOIN detalle_reserva dr ON dr.id_reserva = r.id_reserva
-             LEFT JOIN servicio s ON s.id_servicio = dr.id_servicio
-             WHERE r.fecha = ?
-             GROUP BY r.id_reserva
-             ORDER BY r.hora",
-            [$fecha]
-        );
+        return self::llamar('sp_agenda_dia', [$fecha, null]);
     }
 
+    /** Agenda del día filtrada por sucursal mediante sp_agenda_dia. */
     public static function citasDelDiaSucursal(string $fecha, string $idSucursal): array
     {
-        return self::all(
-            "SELECT r.id_reserva, r.hora, r.estado, r.id_usuario,
-                    CONCAT(u.nombre, ' ', u.ap_paterno) AS cliente,
-                    u.telefono,
-                    COALESCE(GROUP_CONCAT(s.nombre SEPARATOR ', '), 'Sin servicio') AS servicio
-             FROM reserva r
-             LEFT JOIN usuario u ON u.id_usuario = r.id_usuario
-             LEFT JOIN detalle_reserva dr ON dr.id_reserva = r.id_reserva
-             LEFT JOIN servicio s ON s.id_servicio = dr.id_servicio
-             WHERE r.fecha = ? AND r.id_sucursal = ?
-             GROUP BY r.id_reserva
-             ORDER BY r.hora",
-            [$fecha, $idSucursal]
-        );
+        return self::llamar('sp_agenda_dia', [$fecha, $idSucursal]);
     }
 
     public static function contarProximasSucursal(string $idSucursal, string $desde): int

@@ -382,13 +382,18 @@ final class Compra extends Model
         return ['filas' => self::all($sql, $params), 'total' => $total];
     }
 
+    /**
+     * Resumen de ventas calculado en MySQL por sp_resumen_ventas.
+     * Los filtros vacíos se envían como NULL (sin filtro) al procedimiento.
+     */
     public static function totales(string $fecha = '', string $mes = '', string $anio = ''): array
     {
-        [$where, $params] = self::filtroFecha($fecha, $mes, $anio);
-        return self::one(
-            'SELECT COUNT(*) AS compras, COALESCE(SUM(total_pagar),0) AS monto FROM compra WHERE 1' . $where,
-            $params
-        ) ?? ['compras' => 0, 'monto' => 0];
+        $filas = self::llamar('sp_resumen_ventas', [
+            $fecha !== '' ? $fecha : null,
+            $mes !== '' ? (int)$mes : null,
+            $anio !== '' ? (int)$anio : null,
+        ]);
+        return $filas[0] ?? ['compras' => 0, 'monto' => 0];
     }
 
     /** Años con ventas registradas (para el filtro de año). */
@@ -420,9 +425,10 @@ final class Compra extends Model
         return [$where, $params];
     }
 
+    /** Total del día calculado por fn_total_ventas_dia (MySQL). */
     public static function totalDelDia(string $fecha): float
     {
-        return (float)self::value('SELECT COALESCE(SUM(total_pagar),0) FROM compra WHERE fecha_compra = ?', [$fecha]);
+        return (float)self::value('SELECT fn_total_ventas_dia(?)', [$fecha]);
     }
 
     public static function ultimosDias(int $dias = 7): array
