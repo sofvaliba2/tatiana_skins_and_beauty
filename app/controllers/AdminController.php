@@ -396,7 +396,10 @@ final class AdminController extends Controller
         ['filas' => $servicios, 'total' => $total] = Servicio::buscar($q, $pagina, self::POR_PAGINA);
         $categorias = Servicio::categorias();
 
-        $this->vista('admin/servicios.php', compact('servicios', 'categorias', 'q', 'pagina', 'total'));
+        $idEditar = $this->texto('editar');
+        $editar = $idEditar !== '' ? Servicio::porId($idEditar) : null;
+
+        $this->vista('admin/servicios.php', compact('servicios', 'categorias', 'q', 'pagina', 'total', 'editar'));
     }
 
     private function guardarServicio(): void
@@ -411,7 +414,10 @@ final class AdminController extends Controller
         }
         if ($v->fallido()) {
             Flash::error(implode(' ', $v->mensajes()));
-            $this->redirigir('admin_servicios', ['q' => $this->texto('q')]);
+            $this->redirigir('admin_servicios', array_filter([
+                'editar' => $idEditar,
+                'q'      => $this->texto('q'),
+            ]));
         }
 
         $imagen = null;
@@ -447,7 +453,10 @@ final class AdminController extends Controller
             error_log('[ADMIN-SERV] ' . $e->getMessage());
             Flash::error('No se pudo guardar el servicio.');
         }
-        $this->redirigir('admin_servicios', ['q' => $this->texto('q')]);
+        $this->redirigir('admin_servicios', array_filter([
+            'editar' => $idEditar,
+            'q'      => $this->texto('q'),
+        ]));
     }
 
     /** Años para el selector de filtro (incluye siempre el año actual). */
