@@ -66,20 +66,19 @@ final class RecuperacionPassword extends Model
         );
     }
 
-    /** Limpieza oportunista de tokens vencidos/usados (evita crecimiento infinito). */
+    /**
+     * Limpieza oportunista de tokens vencidos/usados.
+     * La lógica vive en MySQL: sp_limpiar_recuperacion (ver database/migration_procedimientos_triggers.sql).
+     */
     public static function limpiar(): void
     {
-        self::run('DELETE FROM recuperacion_password WHERE expira_en < DATE_SUB(NOW(), INTERVAL 1 DAY) OR usado_en IS NOT NULL');
+        \App\Core\Database::pdo()->exec('CALL sp_limpiar_recuperacion(1)');
     }
 
     /** Número de solicitudes de esa IP dentro de la ventana de protección. */
     public static function solicitudesRecientes(string $ip): int
     {
-        return (int)self::value(
-            'SELECT COUNT(*) FROM recuperacion_password
-             WHERE ip = ? AND creado_en >= DATE_SUB(NOW(), INTERVAL ' . self::MINUTOS_VENTANA . ' MINUTE)',
-            [$ip]
-        );
+        return (int)self::value('SELECT fn_solicitudes_recientes(?)', [$ip]);
     }
 
     /** Protección contra solicitudes excesivas: máximo 5 enlaces por IP y hora. */
@@ -91,17 +90,7 @@ final class RecuperacionPassword extends Model
     /** Segundos que faltan para que la IP pueda volver a solicitar un enlace. */
     public static function segundosEspera(string $ip): int
     {
-        $masAntiguo = self::value(
-            'SELECT MIN(creado_en) FROM recuperacion_password
-             WHERE ip = ? AND creado_en >= DATE_SUB(NOW(), INTERVAL ' . self::MINUTOS_VENTANA . ' MINUTE)',
-            [$ip]
-        );
-        if ($masAntiguo === null) {
-            return self::MINUTOS_VENTANA * 60;
-        }
-
-        $transcurrido = time() - strtotime((string)$masAntiguo);
-        return max(1, self::MINUTOS_VENTANA * 60 - $transcurrido);
+        return max(1, (int)self::value('SELECT fn_segundos_espera_recuperacion(?)', [$ip]));
     }
 
     /** Mensaje neutro: no revela si el correo existe ni quién solicitó el enlace. */
