@@ -25,6 +25,14 @@ if (str_contains($cfg['link_base'], 'tu-dominio-real')) {
 }
 echo "\n";
 
+$pareceEjemplo = str_contains($cfg['user'], 'tu-correo')
+    || str_contains($cfg['pass'], 'contraseña_de_aplicacion')
+    || str_contains($cfg['pass'], 'aplicacion');
+if ($pareceEjemplo) {
+    echo "AVISO: SMTP_USER o SMTP_PASS todavía contienen el texto de ejemplo. "
+        . "Reemplázalos por tu Gmail real y por una contraseña de aplicación real.\n";
+}
+
 if (!Correo::configuracionCompleta()) {
     fwrite(STDERR, "FALLO: faltan datos SMTP en .env (SMTP_HOST, SMTP_USER o SMTP_PASS).\n");
     exit(1);
