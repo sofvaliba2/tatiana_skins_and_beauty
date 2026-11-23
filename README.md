@@ -64,3 +64,19 @@ C:\xampp\mysql\bin\mysql.exe -u root < "C:\xampp\htdocs\tatiana_skins_and_beauty
 | Empleado | `empleado@empleado.com` | `12345678` | Acceso al panel de empleado: agenda de citas por sucursal, clientes, historial de piel, ventas y pagos con comprobante, y edición de su perfil. No puede administrar usuarios, roles, sucursales ni ver reportes gerenciales. |
 
 > **Empleado de prueba:** pertenece a la sucursal **SUC01 – SOPOCACHI**. Las cuentas de empleado (`ROL02`) solo pueden crearse o editarse desde **Administrador → Usuarios**; no existe registro público para empleados.
+
+---
+
+## Correo SMTP (recuperación de contraseña)
+
+Completa las variables `SMTP_*` y `MAIL_*` en `.env` (consulta `.env.example`).
+Luego verifica la configuración con:
+
+```bash
+php bin/probar_smtp.php
+```
+
+El comando envía un correo de prueba a la propia cuenta SMTP e imprime el motivo
+exacto del fallo si el servidor rechaza la conexión o la autenticación. Nunca
+muestra contraseñas. Si usas Gmail, `SMTP_PASS` debe ser una contraseña de
+aplicación de 16 caracteres y `MAIL_FROM` debe coincidir con `SMTP_USER`.

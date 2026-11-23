@@ -16,6 +16,13 @@ use PHPMailer\PHPMailer\PHPMailer;
 final class Correo
 {
     private static ?array $smtp = null;
+    private static ?string $ultimoError = null;
+
+    /** Último motivo de fallo SMTP de esta petición (nunca incluye credenciales). */
+    public static function ultimoError(): ?string
+    {
+        return self::$ultimoError;
+    }
 
     private static function configuracion(): array
     {
@@ -55,13 +62,16 @@ final class Correo
     /** Envía un correo HTML por SMTP. Devuelve true solo si el servidor lo aceptó. */
     public static function enviar(string $para, string $asunto, string $html, string $texto = ''): bool
     {
+        self::$ultimoError = null;
         $para = trim($para);
         if ($para === '' || !filter_var($para, FILTER_VALIDATE_EMAIL)) {
+            self::$ultimoError = 'La dirección de destino no es válida.';
             return false;
         }
 
         if (!self::configuracionCompleta()) {
-            error_log('[SMTP] Configuración incompleta: revisa SMTP_HOST, SMTP_USER y SMTP_PASS en .env');
+            self::$ultimoError = 'Configuración SMTP incompleta: revisa SMTP_HOST, SMTP_USER y SMTP_PASS en .env';
+            error_log('[SMTP] ' . self::$ultimoError);
             return false;
         }
 
@@ -106,10 +116,12 @@ final class Correo
 
             return $mail->send();
         } catch (PhpMailerException $e) {
-            error_log('[SMTP] Error al enviar correo: ' . $e->getMessage());
+            self::$ultimoError = $e->getMessage();
+            error_log('[SMTP] Error al enviar correo: ' . self::$ultimoError);
             return false;
         } catch (\Throwable $e) {
-            error_log('[SMTP] Error inesperado: ' . $e->getMessage());
+            self::$ultimoError = $e->getMessage();
+            error_log('[SMTP] Error inesperado: ' . self::$ultimoError);
             return false;
         }
     }
