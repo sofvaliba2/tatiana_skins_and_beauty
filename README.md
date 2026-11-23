@@ -51,6 +51,12 @@ Abra el **XAMPP Control Panel** y presione **Start** en **Apache** y en **MySQL*
 C:\xampp\mysql\bin\mysql.exe -u root < "C:\xampp\htdocs\tatiana_skins_and_beauty\tatiana_skins_and_beauty_corregida.sql"
 ```
 
+Si la base de datos ya existía, aplica además la migración de imágenes de servicios:
+
+```bash
+C:\xampp\mysql\bin\mysql.exe -u root tatiana_skins_and_beauty_corregida < "C:\xampp\htdocs\tatiana_skins_and_beauty\database\migration_servicios_imagenes.sql"
+```
+
 ### 5. Abrir el sistema
 [http://localhost/tatiana_skins_and_beauty/tatiana_skins_and_beauty/public/] → lleva a la pantalla de inicio.
 

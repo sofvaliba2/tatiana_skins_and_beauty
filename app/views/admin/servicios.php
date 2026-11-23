@@ -28,11 +28,19 @@ $editar = $editar ?? null;
             <?= vacio('Aún no hay servicios. Crea el primero en el formulario lateral.', 'sparkle') ?>
         <?php else: ?>
         <table class="table">
-            <thead><tr><th>Código</th><th>Servicio</th><th>Categoría</th><th>Duración</th><th>Precio</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Código</th><th>Imagen</th><th>Servicio</th><th>Categoría</th><th>Duración</th><th>Precio</th><th>Acciones</th></tr></thead>
             <tbody>
             <?php foreach ($servicios as $s): ?>
+                <?php $imgServicio = trim((string)($s['imagen_url'] ?? '')); ?>
                 <tr>
                     <td><?= e($s['id_servicio']) ?></td>
+                    <td>
+                        <?php if ($imgServicio !== '' && archivo_existe($imgServicio)): ?>
+                            <img src="<?= e(url_archivo($imgServicio)) ?>" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:10px;display:block">
+                        <?php else: ?>
+                            <span class="muted"><?= icon('sparkle', 18) ?></span>
+                        <?php endif; ?>
+                    </td>
                     <td><b><?= e($s['nombre']) ?></b><br><small class="muted"><?= e(mb_strimwidth((string)($s['descripcion'] ?? ''), 0, 60, '…')) ?></small></td>
                     <td><?= e($s['categoria'] ?? '—') ?></td>
                     <td><?= (int)$s['duracion_minutos'] ?> min</td>
@@ -70,7 +78,7 @@ $editar = $editar ?? null;
 
     <aside class="panel">
         <div class="panel-head"><h3><?= $editar !== null ? 'Editar servicio' : 'Nuevo servicio' ?></h3></div>
-        <form method="post" action="<?= ruta('admin_servicios') ?>" data-guardar>
+        <form method="post" action="<?= ruta('admin_servicios') ?>" enctype="multipart/form-data" data-guardar>
             <?= csrf() ?>
             <input type="hidden" name="accion" value="servicio">
             <?php if ($editar !== null): ?><input type="hidden" name="id_servicio" value="<?= e($editar['id_servicio']) ?>"><?php endif; ?>
@@ -87,6 +95,20 @@ $editar = $editar ?? null;
                         <option value="<?= e($c['id_categoriaS']) ?>" <?= (($editar['id_categoriaS'] ?? '') === $c['id_categoriaS']) ? 'selected' : '' ?>><?= e($c['nombre_cservicio']) ?></option>
                     <?php endforeach; ?>
                 </select>
+            </div>
+            <div class="field">
+                <label>Imagen del servicio</label>
+                <input class="input" type="file" name="imagen" accept="image/jpeg,image/png,image/webp">
+                <small class="muted">JPG, PNG o WEBP · máximo 2 MB.</small>
+                <?php if ($editar !== null && !empty($editar['imagen_url'])): ?>
+                    <div style="display:flex;align-items:center;gap:.7rem;margin-top:.5rem">
+                        <img src="<?= e(url_archivo($editar['imagen_url'])) ?>" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:10px">
+                        <a class="link" href="<?= e(url_archivo($editar['imagen_url'])) ?>" target="_blank">Ver imagen actual</a>
+                    </div>
+                    <label style="display:flex;gap:.4rem;align-items:center;margin-top:.45rem;font-size:.85rem">
+                        <input type="checkbox" name="quitar_imagen" value="1"> Quitar imagen actual
+                    </label>
+                <?php endif; ?>
             </div>
             <div style="display:flex;gap:.6rem;margin-top:1rem">
                 <?php if ($editar !== null): ?>

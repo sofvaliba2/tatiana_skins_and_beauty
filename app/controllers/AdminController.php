@@ -414,14 +414,34 @@ final class AdminController extends Controller
             $this->redirigir('admin_servicios', ['q' => $this->texto('q')]);
         }
 
+        $imagen = null;
+        if (!empty($_FILES['imagen']['name'] ?? '')) {
+            $errorUp = null;
+            $prefijo = 'uploads/servicios/serv_' . date('Ymd_His') . '_' . bin2hex(random_bytes(3));
+            $imagen = Upload::imagen($_FILES['imagen'], $prefijo, $errorUp);
+            if ($imagen === null) {
+                Flash::error($errorUp ?? 'No se pudo subir la imagen.');
+                $this->redirigir('admin_servicios', array_filter([
+                    'editar' => $idEditar,
+                    'q'      => $this->texto('q'),
+                ]));
+            }
+        }
+
         try {
-            [$id, $creado] = Servicio::guardar($idEditar !== '' ? $idEditar : null, [
+            $datos = [
                 'nombre'           => trim((string)$_POST['nombre']),
                 'descripcion'      => trim((string)($_POST['descripcion'] ?? '')),
                 'precio'           => (float)$_POST['precio'],
                 'duracion_minutos' => $this->entero('duracion_minutos'),
                 'id_categoriaS'    => $this->texto('id_categoriaS') !== '' ? $this->texto('id_categoriaS') : null,
-            ]);
+            ];
+            if ($imagen !== null) {
+                $datos['imagen_url'] = $imagen;
+            } elseif ($this->texto('quitar_imagen') === '1') {
+                $datos['imagen_url'] = null;
+            }
+            [$id, $creado] = Servicio::guardar($idEditar !== '' ? $idEditar : null, $datos);
             Flash::ok($creado ? 'Servicio registrado: ' . $id : 'Servicio actualizado.');
         } catch (\Throwable $e) {
             error_log('[ADMIN-SERV] ' . $e->getMessage());

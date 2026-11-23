@@ -520,6 +520,7 @@ CREATE TABLE `servicio` (
   `id_servicio` varchar(10) NOT NULL,
   `nombre` varchar(80) DEFAULT NULL,
   `descripcion` varchar(200) DEFAULT NULL,
+  `imagen_url` varchar(255) DEFAULT NULL,
   `precio` decimal(10,2) DEFAULT NULL,
   `duracion_minutos` int(11) DEFAULT NULL,
   `id_categoriaS` varchar(10) DEFAULT NULL

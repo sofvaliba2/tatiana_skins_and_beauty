@@ -23,8 +23,13 @@ require __DIR__ . '/../layout/header.php';
         </div>
         <div class="grid-3">
             <?php foreach (($servicios ?? []) as $s): ?>
+                <?php $fotoServicio = trim((string)($s['imagen_url'] ?? '')); ?>
             <article class="card servicio-card">
-                <div class="ico"><?= icon($s['icono'] ?? 'sparkle', 28) ?></div>
+                <?php if ($fotoServicio !== '' && archivo_existe($fotoServicio)): ?>
+                    <div class="foto"><img src="<?= e(url_archivo($fotoServicio)) ?>" alt="<?= e($s['nombre']) ?>"></div>
+                <?php else: ?>
+                    <div class="ico"><?= icon($s['icono'] ?? 'sparkle', 28) ?></div>
+                <?php endif; ?>
                 <h3><?= e($s['nombre']) ?></h3>
                 <p class="muted" style="font-size:.92rem"><?= e($s['descripcion']) ?></p>
                 <div class="meta"><span><?= icon('clock', 15) ?> <?= (int)($s['duracion_minutos'] ?? 0) ?> min</span></div>
